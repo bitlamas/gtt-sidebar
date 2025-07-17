@@ -16,7 +16,7 @@
                            FontSize="10"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Left"/>
-                <TextBlock Text="7d" 
+                <TextBlock Text="24h" 
                            Foreground="#666666" 
                            FontSize="8"
                            HorizontalAlignment="Right"

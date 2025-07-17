@@ -64,8 +64,9 @@ namespace gtt_sidebar.Widgets.StockWidget
                 },
                 new StockItem {
                     Symbol = "XMR",
-                    ApiSource = "Yahoo",
-                    PairName = "XMR-USD",
+                    ApiSource = "Kraken",
+                    PairName = "XMRUSD",
+                    HistoricalPairName = "XMRUSD", // Kraken pair for XMR
                     DisplayName = "XMR",
                     RequiresFxConversion = true
                 },
@@ -73,7 +74,7 @@ namespace gtt_sidebar.Widgets.StockWidget
                     Symbol = "SPY",
                     ApiSource = "Yahoo",
                     PairName = "SPY",
-                    DisplayName = "S&P 500",
+                    DisplayName = "SPY", // Changed from "S&P 500" to "SPY"
                     RequiresFxConversion = true
                 },
                 new StockItem {
@@ -143,7 +144,7 @@ namespace gtt_sidebar.Widgets.StockWidget
             leftStack.Children.Add(symbolText);
             leftStack.Children.Add(priceText);
 
-            // Right side - 7-day change
+            // Right side - daily change (current vs last close)
             var rightStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right };
 
             var changeText = new TextBlock
@@ -293,11 +294,35 @@ namespace gtt_sidebar.Widgets.StockWidget
                     throw new Exception("No result data from Kraken API");
                 }
 
-                var firstPair = result.First;
-                var pairData = firstPair.First;
-                var currentPrice = (double)pairData["c"][0];
+                // Find the correct pair data in the result
+                JToken pairData = null;
+                foreach (var property in result.Children<JProperty>())
+                {
+                    System.Diagnostics.Debug.WriteLine($"Found pair: {property.Name}");
+                    pairData = property.Value;
+                    break; // Take the first (and usually only) pair
+                }
 
-                // Try to get historical data with the alternative pair name
+                if (pairData == null)
+                {
+                    throw new Exception("No pair data found in Kraken API response");
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Pair data structure: {pairData}");
+                var currentPrice = (double)pairData["c"][0];
+                var previousClosePrice = (double)pairData["o"]; // Opening price is a simple value, not an array
+
+                // Convert to CAD if needed
+                if (stock.RequiresFxConversion)
+                {
+                    currentPrice *= _usdToCadRate;
+                    previousClosePrice *= _usdToCadRate;
+                }
+
+                // Calculate daily change (current vs previous close)
+                var dailyChange = ((currentPrice - previousClosePrice) / previousClosePrice) * 100;
+
+                // Try to get 8 days of historical data for 7-day chart
                 var historicalPairName = stock.HistoricalPairName ?? stock.PairName;
                 var historicalUrl = $"https://api.kraken.com/0/public/OHLC?pair={historicalPairName}&interval=1440";
 
@@ -314,7 +339,7 @@ namespace gtt_sidebar.Widgets.StockWidget
                     var historicalResult = historicalData["result"];
                     if (historicalResult != null)
                     {
-                        // Find the correct key in the result
+                        // Find the correct key in the result (skip "last" timestamp)
                         JArray ohlcData = null;
                         foreach (var property in historicalResult.Children<JProperty>())
                         {
@@ -329,6 +354,7 @@ namespace gtt_sidebar.Widgets.StockWidget
                         {
                             var priceData = new List<(DateTime date, double price)>();
 
+                            // Get last 8 days to calculate 7 days of % changes
                             var startIndex = Math.Max(0, ohlcData.Count - 8);
                             for (int i = startIndex; i < ohlcData.Count; i++)
                             {
@@ -337,21 +363,24 @@ namespace gtt_sidebar.Widgets.StockWidget
                                 var closePrice = (double)day[4];
                                 var date = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
 
+                                // Convert to CAD if needed
+                                if (stock.RequiresFxConversion)
+                                {
+                                    closePrice *= _usdToCadRate;
+                                }
+
                                 priceData.Add((date, closePrice));
                             }
 
                             if (priceData.Count >= 2)
                             {
-                                var weekAgoPrice = priceData[0].price;
-                                var weekChange = ((currentPrice - weekAgoPrice) / weekAgoPrice) * 100;
-
                                 Dispatcher.Invoke(() =>
                                 {
                                     stock.PriceTextBlock.Text = FormatCurrency(currentPrice);
-                                    stock.ChangeTextBlock.Text = $"{weekChange:+0.0;-0.0}%";
+                                    stock.ChangeTextBlock.Text = $"{dailyChange:+0.0;-0.0}%";
 
-                                    UpdateTrendVisuals(stock, weekChange);
-                                    DrawBarChartWithDates(stock, priceData);
+                                    UpdateTrendVisuals(stock, dailyChange);
+                                    DrawPercentageChangeChart(stock, priceData);
                                 });
                                 return;
                             }
@@ -367,8 +396,8 @@ namespace gtt_sidebar.Widgets.StockWidget
                 Dispatcher.Invoke(() =>
                 {
                     stock.PriceTextBlock.Text = FormatCurrency(currentPrice);
-                    stock.ChangeTextBlock.Text = "--";
-                    stock.ArrowTextBlock.Text = "→";
+                    stock.ChangeTextBlock.Text = $"{dailyChange:+0.0;-0.0}%";
+                    UpdateTrendVisuals(stock, dailyChange);
                     stock.ChartCanvas.Children.Clear();
                 });
             }
@@ -383,7 +412,7 @@ namespace gtt_sidebar.Widgets.StockWidget
         {
             try
             {
-                var period1 = DateTimeOffset.UtcNow.AddDays(-14).ToUnixTimeSeconds();
+                var period1 = DateTimeOffset.UtcNow.AddDays(-12).ToUnixTimeSeconds();
                 var period2 = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                 var url = $"https://query1.finance.yahoo.com/v8/finance/chart/{stock.PairName}?period1={period1}&period2={period2}&interval=1d";
@@ -398,6 +427,7 @@ namespace gtt_sidebar.Widgets.StockWidget
 
                 var priceData = new List<(DateTime date, double price)>();
 
+                // Get last 8 days to calculate 7 days of % changes
                 var startIndex = Math.Max(0, closes.Count - 8);
                 for (int i = startIndex; i < closes.Count; i++)
                 {
@@ -419,16 +449,16 @@ namespace gtt_sidebar.Widgets.StockWidget
                 if (priceData.Count >= 2)
                 {
                     var currentPrice = priceData[priceData.Count - 1].price;
-                    var weekAgoPrice = priceData[0].price;
-                    var weekChange = ((currentPrice - weekAgoPrice) / weekAgoPrice) * 100;
+                    var previousPrice = priceData[priceData.Count - 2].price;
+                    var dailyChange = ((currentPrice - previousPrice) / previousPrice) * 100;
 
                     Dispatcher.Invoke(() =>
                     {
                         stock.PriceTextBlock.Text = FormatCurrency(currentPrice);
-                        stock.ChangeTextBlock.Text = $"{weekChange:+0.0;-0.0}%";
+                        stock.ChangeTextBlock.Text = $"{dailyChange:+0.0;-0.0}%";
 
-                        UpdateTrendVisuals(stock, weekChange);
-                        DrawBarChartWithDates(stock, priceData);
+                        UpdateTrendVisuals(stock, dailyChange);
+                        DrawPercentageChangeChart(stock, priceData);
                     });
                 }
             }
@@ -470,52 +500,7 @@ namespace gtt_sidebar.Widgets.StockWidget
             }
         }
 
-        private void DrawBarChart(StockItem stock, List<double> prices)
-        {
-            if (prices.Count < 2) return;
-
-            stock.ChartCanvas.Children.Clear();
-
-            var width = 108.0;
-            var height = 12.0;
-
-            var minPrice = prices.Min();
-            var maxPrice = prices.Max();
-            var priceRange = maxPrice - minPrice;
-
-            if (priceRange == 0) return;
-
-            var barWidth = width / prices.Count;
-
-            for (int i = 0; i < prices.Count; i++)
-            {
-                var barHeight = ((prices[i] - minPrice) / priceRange * height);
-                var x = i * barWidth;
-                var y = height - barHeight;
-
-                // Calculate the date for this bar (going backwards from today)
-                var daysBack = prices.Count - 1 - i;
-                var barDate = DateTime.Now.AddDays(-daysBack);
-
-                var rect = new Rectangle
-                {
-                    Width = barWidth - 1,
-                    Height = Math.Max(barHeight, 1), // Minimum height so it's visible
-                    Fill = new SolidColorBrush(Color.FromArgb(150, 100, 149, 237)),
-                    Stroke = new SolidColorBrush(Color.FromRgb(100, 149, 237)),
-                    StrokeThickness = 0.5,
-                    // Add tooltip with date and price
-                    ToolTip = $"{barDate:MMM dd}: {FormatCurrency(prices[i])}"
-                };
-
-                Canvas.SetLeft(rect, x);
-                Canvas.SetTop(rect, y);
-
-                stock.ChartCanvas.Children.Add(rect);
-            }
-        }
-
-        private void DrawBarChartWithDates(StockItem stock, List<(DateTime date, double price)> priceData)
+        private void DrawPercentageChangeChart(StockItem stock, List<(DateTime date, double price)> priceData)
         {
             if (priceData.Count < 2) return;
 
@@ -524,30 +509,55 @@ namespace gtt_sidebar.Widgets.StockWidget
             var width = 108.0;
             var height = 12.0;
 
-            var prices = priceData.Select(x => x.price).ToList();
-            var minPrice = prices.Min();
-            var maxPrice = prices.Max();
-            var priceRange = maxPrice - minPrice;
+            // Calculate percentage changes for the last 14 days (skip the first day as reference)
+            var percentageChanges = new List<(DateTime date, double price, double percentageChange)>();
 
-            if (priceRange == 0) return;
-
-            var barWidth = width / priceData.Count;
-
-            for (int i = 0; i < priceData.Count; i++)
+            for (int i = 1; i < priceData.Count; i++)
             {
-                var barHeight = ((priceData[i].price - minPrice) / priceRange * height);
+                var currentPrice = priceData[i].price;
+                var previousPrice = priceData[i - 1].price;
+                var percentageChange = ((currentPrice - previousPrice) / previousPrice) * 100;
+
+                percentageChanges.Add((priceData[i].date, currentPrice, percentageChange));
+            }
+
+            // Only show the last 7 days
+            if (percentageChanges.Count > 7)
+            {
+                percentageChanges = percentageChanges.Skip(percentageChanges.Count - 7).ToList();
+            }
+
+            if (percentageChanges.Count == 0) return;
+
+            var maxAbsChange = percentageChanges.Max(x => Math.Abs(x.percentageChange));
+            if (maxAbsChange == 0) maxAbsChange = 1; // Avoid division by zero
+
+            var barWidth = width / percentageChanges.Count;
+
+            for (int i = 0; i < percentageChanges.Count; i++)
+            {
+                var change = percentageChanges[i];
+                var normalizedHeight = Math.Abs(change.percentageChange) / maxAbsChange;
+                var barHeight = normalizedHeight * (height / 2); // Use half height for scaling
+
+                // Position from center line
+                var centerY = height / 2;
+                var y = change.percentageChange >= 0 ? centerY - barHeight : centerY;
+                var actualHeight = Math.Max(barHeight, 1); // Minimum height so it's visible
+
                 var x = i * barWidth;
-                var y = height - barHeight;
+
+                // Choose color: blue for positive, orange for negative
+                var color = change.percentageChange >= 0
+                    ? Color.FromArgb(150, 100, 149, 237) // Blue with transparency
+                    : Color.FromArgb(150, 255, 140, 0);  // Orange with transparency
 
                 var rect = new Rectangle
                 {
                     Width = barWidth - 1,
-                    Height = Math.Max(barHeight, 1), // Minimum height so it's visible
-                    Fill = new SolidColorBrush(Color.FromArgb(150, 100, 149, 237)),
-                    Stroke = new SolidColorBrush(Color.FromRgb(100, 149, 237)),
-                    StrokeThickness = 0.5,
-                    // Tooltip shows the actual date and price for this bar
-                    ToolTip = $"{priceData[i].date:MMM dd}: {FormatCurrency(priceData[i].price)}"
+                    Height = actualHeight,
+                    Fill = new SolidColorBrush(color),
+                    ToolTip = $"{change.date:MMM dd}: {FormatCurrency(change.price)} ({change.percentageChange:+0.0;-0.0}%)"
                 };
 
                 Canvas.SetLeft(rect, x);
