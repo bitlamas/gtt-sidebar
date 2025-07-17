@@ -1,0 +1,40 @@
+﻿<UserControl x:Class="gtt_sidebar.Widgets.StockWidget"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White"
+             Margin="0,0,0,5">
+    <Border Padding="4" 
+            CornerRadius="3"
+            Background="#F8F8F8"
+            BorderBrush="#E0E0E0"
+            BorderThickness="1">
+        <StackPanel>
+            <!-- Header -->
+            <Grid Margin="0,0,0,4">
+                <TextBlock Text="Markets" 
+                           Foreground="#333333" 
+                           FontSize="10"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Left"/>
+                <TextBlock Text="7d" 
+                           Foreground="#666666" 
+                           FontSize="8"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- Stock Items Container -->
+            <StackPanel x:Name="StockContainer" Orientation="Vertical">
+                <!-- Stock items will be added programmatically -->
+            </StackPanel>
+
+            <!-- Last Update Info -->
+            <TextBlock x:Name="LastUpdateText"
+                       Text="Updated: --"
+                       Foreground="#999999" 
+                       FontSize="7"
+                       HorizontalAlignment="Center"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+    </Border>
+</UserControl>

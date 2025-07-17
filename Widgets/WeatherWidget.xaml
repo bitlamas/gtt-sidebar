@@ -1,0 +1,73 @@
+﻿<UserControl x:Class="gtt_sidebar.Widgets.WeatherWidget"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White"
+             Margin="0,0,0,5">
+    <Border Padding="6" 
+            CornerRadius="3"
+            Background="#F8F8F8"
+            BorderBrush="#E0E0E0"
+            BorderThickness="1">
+        <StackPanel>
+            <!-- Current Weather -->
+            <StackPanel HorizontalAlignment="Center" Margin="0,0,0,8">
+                <!-- Weather Icon -->
+                <TextBlock x:Name="WeatherIcon" 
+                           Text="☀️" 
+                           FontSize="28"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,2"/>
+
+                <!-- Weather Description -->
+                <TextBlock x:Name="WeatherDescription" 
+                           Text="Sunny" 
+                           Foreground="#333333" 
+                           FontSize="10"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,2"/>
+
+                <!-- Temperature -->
+                <TextBlock x:Name="Temperature" 
+                           Text="22°C" 
+                           Foreground="#333333" 
+                           FontSize="12"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- 3-Day Forecast -->
+            <Border BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="0,6,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <!-- Day 1 -->
+                    <StackPanel Margin="0,0,8,0" HorizontalAlignment="Center">
+                        <TextBlock x:Name="Day1Icon" Text="⛅" FontSize="14" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="Day1Temp" Text="19°" Foreground="#666666" FontSize="8" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Day 2 -->
+                    <StackPanel Margin="0,0,8,0" HorizontalAlignment="Center">
+                        <TextBlock x:Name="Day2Icon" Text="🌧️" FontSize="14" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="Day2Temp" Text="16°" Foreground="#666666" FontSize="8" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Day 3 -->
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock x:Name="Day3Icon" Text="☀️" FontSize="14" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="Day3Temp" Text="23°" Foreground="#666666" FontSize="8" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Location (clickable) -->
+            <TextBlock x:Name="LocationText" 
+                       Text="Saint-Joseph-de-Beauce" 
+                       Foreground="#999999" 
+                       FontSize="8"
+                       HorizontalAlignment="Center"
+                       Margin="0,4,0,0"
+                       Cursor="Hand"
+                       MouseLeftButtonDown="LocationText_MouseLeftButtonDown"/>
+        </StackPanel>
+    </Border>
+</UserControl>
