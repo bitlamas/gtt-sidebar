@@ -55,41 +55,46 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
+    <ApplicationDefinition Include="Core\Application\App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Widgets\ClockWidget.xaml.cs">
+	<Compile Include="Core\Interfaces\IConfigurableWidget.cs" />
+	<Compile Include="Core\Interfaces\IWidgetMetadata.cs" />
+	<Compile Include="Core\Managers\WidgetManager.cs" />
+	<Compile Include="Core\Managers\WindowPositioner.cs" />
+    <Compile Include="Widgets\ClockWidget\ClockWidget.xaml.cs">
       <DependentUpon>ClockWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Widgets\StockWidget.xaml.cs">
+    <Compile Include="Widgets\StockWidget\StockWidget.xaml.cs">
       <DependentUpon>StockWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Widgets\WeatherWidget.xaml.cs">
+    <Compile Include="Widgets\WeatherWidget\WeatherWidget.xaml.cs">
       <DependentUpon>WeatherWidget.xaml</DependentUpon>
     </Compile>
-    <Page Include="MainWindow.xaml">
+    <Page Include="Core\Application\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="App.xaml.cs">
+    <Compile Include="Core\Application\App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Interfaces\IWidget.cs" />
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Core\Interfaces\IWidget.cs" />
+
+    <Compile Include="Core\Application\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Widgets\ClockWidget.xaml">
+    <Page Include="Widgets\ClockWidget\ClockWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Widgets\StockWidget.xaml">
+    <Page Include="Widgets\StockWidget\StockWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Widgets\WeatherWidget.xaml">
+    <Page Include="Widgets\WeatherWidget\WeatherWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

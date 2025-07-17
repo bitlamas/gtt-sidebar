@@ -2,16 +2,15 @@
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using gtt_sidebar.Interfaces;
+using gtt_sidebar.Core.Interfaces;
 
-namespace gtt_sidebar.Widgets
+namespace gtt_sidebar.Widgets.ClockWidget
 {
     public partial class ClockWidget : UserControl, IWidget
     {
         private DispatcherTimer _timer;
 
-        public string Name => "Clock";
-
+        public new string Name => "Clock";  // Add 'new' keyword
         public ClockWidget()
         {
             InitializeComponent();

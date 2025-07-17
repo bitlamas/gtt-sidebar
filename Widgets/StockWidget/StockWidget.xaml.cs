@@ -10,9 +10,9 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Newtonsoft.Json.Linq;
-using gtt_sidebar.Interfaces;
+using gtt_sidebar.Core.Interfaces;
 
-namespace gtt_sidebar.Widgets
+namespace gtt_sidebar.Widgets.StockWidget
 {
     // Define StockItem class first
     public class StockItem
@@ -36,7 +36,7 @@ namespace gtt_sidebar.Widgets
         private List<StockItem> _stocks;
         private double _usdToCadRate = 1.35; // Default, will be updated
 
-        public string Name => "Stocks";
+        public new string Name => "Stocks";   // StockWidget
 
         public StockWidget()
         {

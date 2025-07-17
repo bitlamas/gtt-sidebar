@@ -7,9 +7,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Newtonsoft.Json.Linq;
-using gtt_sidebar.Interfaces;
+using gtt_sidebar.Core.Interfaces;
 
-namespace gtt_sidebar.Widgets
+namespace gtt_sidebar.Widgets.WeatherWidget
 {
     public partial class WeatherWidget : UserControl, IWidget
     {
@@ -20,7 +20,7 @@ namespace gtt_sidebar.Widgets
         // Free OpenWeatherMap API key - you'll need to get your own
         private const string API_KEY = "c9b2bd0c1ea061353ec9b02831f77c57"; // Get from openweathermap.org
 
-        public string Name => "Weather";
+        public new string Name => "Weather";  // WeatherWidget
 
         public WeatherWidget()
         {
@@ -61,6 +61,7 @@ namespace gtt_sidebar.Widgets
             catch (Exception ex)
             {
                 // Handle errors gracefully
+                System.Diagnostics.Debug.WriteLine($"Weather update error: {ex.Message}");
                 WeatherDescription.Text = "Error loading";
                 Temperature.Text = "--°C";
 
