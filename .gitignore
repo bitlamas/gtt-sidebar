@@ -211,3 +211,22 @@ tree.txt
 # IDE-specific files
 .vscode/
 .vs/
+
+# Migration artifacts (files that might be created during refactoring)
+*.old
+*.backup
+*.orig
+
+# Documentation build artifacts
+docs/_build/
+docs/.doctrees/
+
+# Widget-specific temp files (if any widgets create temp files)
+Widgets/*/temp/
+Widgets/*/*.tmp
+
+# Any test outputs or debugging files
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
