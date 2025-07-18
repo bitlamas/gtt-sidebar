@@ -1,0 +1,57 @@
+﻿<UserControl x:Class="gtt_sidebar.Widgets.Notes.NotesWidget"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent"
+             Height="100"
+             Margin="0,0,0,5"
+             Cursor="Hand">
+    <Border Padding="6" 
+            CornerRadius="3"
+            Background="#F8F8F8"
+            BorderBrush="#E0E0E0"
+            BorderThickness="1"
+            Cursor="Hand">
+        <Grid Cursor="Hand">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,6" Cursor="Hand">
+                <TextBlock Text="Notes" 
+                           Foreground="#333333" 
+                           FontSize="10"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Left"
+                           Cursor="Hand"
+                           IsHitTestVisible="False"/>
+                <TextBlock x:Name="TabCountText"
+                           Text="1 tab" 
+                           Foreground="#666666" 
+                           FontSize="8"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Cursor="Hand"
+                           IsHitTestVisible="False"/>
+            </Grid>
+
+            <!-- Preview Content -->
+            <ScrollViewer Grid.Row="1" 
+                         VerticalScrollBarVisibility="Hidden"
+                         HorizontalScrollBarVisibility="Hidden"
+                         Cursor="Hand"
+                         IsHitTestVisible="False">
+                <TextBlock x:Name="PreviewText"
+                          Text="Click to add notes..."
+                          Foreground="#666666"
+                          FontSize="7"
+                          TextWrapping="Wrap"
+                          LineHeight="9"
+                          Margin="2"
+                          Cursor="Hand"
+                          IsHitTestVisible="False"/>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

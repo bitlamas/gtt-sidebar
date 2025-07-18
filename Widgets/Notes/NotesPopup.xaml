@@ -1,0 +1,80 @@
+<Window x:Class="gtt_sidebar.Widgets.Notes.NotesPopup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Notes"
+        Width="370"
+        Height="230"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Background="White"
+        BorderThickness="1"
+        BorderBrush="#D0D0D0"
+        Topmost="True"
+        ShowInTaskbar="False"
+        Deactivated="Window_Deactivated"
+        KeyDown="Window_KeyDown">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="28"/>
+            <!-- Tab area -->
+            <RowDefinition Height="*"/>
+            <!-- Content area -->
+        </Grid.RowDefinitions>
+
+        <!-- Tab Strip (drag handle) -->
+        <Border x:Name="DragHandle"
+                Grid.Row="0" 
+                Background="#F5F5F5" 
+                BorderBrush="#E0E0E0" 
+                BorderThickness="0,0,0,1"
+                Cursor="SizeAll"
+                MouseLeftButtonDown="DragHandle_MouseLeftButtonDown">
+            <Grid Margin="4,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Tabs Container -->
+                <StackPanel x:Name="TabsContainer" 
+                           Grid.Column="0"
+                           Orientation="Horizontal" 
+                           VerticalAlignment="Center"/>
+
+                <!-- Add Tab Button -->
+                <Button x:Name="AddTabButton"
+                       Grid.Column="1"
+                       Content="+"
+                       Width="20"
+                       Height="20"
+                       FontSize="12"
+                       FontWeight="Bold"
+                       Background="#E8E8E8"
+                       BorderBrush="#C0C0C0"
+                       BorderThickness="1"
+                       VerticalAlignment="Center"
+                       Click="AddTabButton_Click"
+                       ToolTip="Add new tab (max 8)"/>
+            </Grid>
+        </Border>
+
+        <!-- Content Area -->
+        <Border Grid.Row="1" 
+                Background="White"
+                Margin="6">
+            <TextBox x:Name="ContentTextBox"
+                    Background="White"
+                    BorderThickness="0"
+                    FontSize="10"
+                    FontFamily="Consolas, Courier New, monospace"
+                    TextWrapping="Wrap"
+                    AcceptsReturn="True"
+                    AcceptsTab="True"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto"
+                    TextChanged="ContentTextBox_TextChanged"
+                    Padding="0"/>
+        </Border>
+    </Grid>
+</Window>

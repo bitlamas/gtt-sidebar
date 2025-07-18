@@ -59,12 +59,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-	<Compile Include="Core\Interfaces\IConfigurableWidget.cs" />
-	<Compile Include="Core\Interfaces\IWidgetMetadata.cs" />
-	<Compile Include="Core\Managers\WidgetManager.cs" />
-	<Compile Include="Core\Managers\WindowPositioner.cs" />
+    <Compile Include="Widgets\Notes\NotesData.cs" />
+    <Compile Include="Widgets\Notes\NotesStorage.cs" />
+    <Compile Include="Widgets\Notes\MarkdownHelper.cs" />
+    <Compile Include="Widgets\Notes\NotesPopup.xaml.cs">
+      <DependentUpon>NotesPopup.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Core\Interfaces\IConfigurableWidget.cs" />
+    <Compile Include="Core\Interfaces\IWidgetMetadata.cs" />
+    <Compile Include="Core\Managers\WidgetManager.cs" />
+    <Compile Include="Core\Managers\WindowPositioner.cs" />
     <Compile Include="Widgets\ClockWidget\ClockWidget.xaml.cs">
       <DependentUpon>ClockWidget.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Widgets\Notes\NotesWidget.xaml.cs">
+      <DependentUpon>NotesWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Widgets\StockWidget\StockWidget.xaml.cs">
       <DependentUpon>StockWidget.xaml</DependentUpon>
@@ -76,12 +85,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Widgets\Notes\NotesPopup.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Compile Include="Core\Application\App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Core\Interfaces\IWidget.cs" />
-
     <Compile Include="Core\Application\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -89,6 +101,10 @@
     <Page Include="Widgets\ClockWidget\ClockWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Widgets\Notes\NotesWidget.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Widgets\StockWidget\StockWidget.xaml">
       <SubType>Designer</SubType>
