@@ -12,9 +12,38 @@
         BorderBrush="#E0E0E0">
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <!-- Widgets -->
+            <RowDefinition Height="20"/>
+            <!-- Footer -->
+        </Grid.RowDefinitions>
+
+        <!-- Widgets Container -->
         <StackPanel x:Name="WidgetContainer" 
+                    Grid.Row="0"
                     Orientation="Vertical"
                     Margin="3">
         </StackPanel>
+
+        <!-- Footer -->
+        <Border Grid.Row="1" 
+                Background="#F0F0F0" 
+                BorderBrush="#E0E0E0" 
+                BorderThickness="0,1,0,0">
+            <Button x:Name="SettingsButton" 
+                    Content="⚙️" 
+                    Width="16" Height="16"
+                    FontSize="10"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="#666666"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Margin="0,0,4,0"
+                    ToolTip="Settings"
+                    Cursor="Hand"
+                    Click="SettingsButton_Click"/>
+        </Border>
     </Grid>
 </Window>

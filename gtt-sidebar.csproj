@@ -59,6 +59,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Core\Settings\SettingsData.cs" />
+    <Compile Include="Core\Settings\SettingsStorage.cs" />
+    <Compile Include="Core\Settings\SettingsWindow.xaml.cs">
+      <DependentUpon>SettingsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Widgets\Notes\NotesData.cs" />
     <Compile Include="Widgets\Notes\NotesStorage.cs" />
     <Compile Include="Widgets\Notes\MarkdownHelper.cs" />
@@ -84,6 +89,10 @@
     <Page Include="Core\Application\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Core\Settings\SettingsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Widgets\Notes\NotesPopup.xaml">
       <SubType>Designer</SubType>
