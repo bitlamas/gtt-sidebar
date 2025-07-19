@@ -196,6 +196,9 @@ namespace gtt_sidebar.Widgets.Notes
                     _popup.Close();
                     _popup = null;
                 }
+
+                // Clear references
+                _notesData = null;
             }
             catch (Exception ex)
             {

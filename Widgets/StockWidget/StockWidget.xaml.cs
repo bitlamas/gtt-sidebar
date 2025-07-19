@@ -31,7 +31,7 @@ namespace gtt_sidebar.Widgets.StockWidget
 
     public partial class StockWidget : UserControl, IWidget
     {
-        private readonly HttpClient _httpClient;
+        private HttpClient _httpClient;
         private DispatcherTimer _timer;
         private List<StockItem> _stocks;
         private double _usdToCadRate = 1.35; // Default, will be updated
@@ -201,7 +201,7 @@ namespace gtt_sidebar.Widgets.StockWidget
             // Update every 10 minutes since we have unlimited calls
             _timer = new DispatcherTimer();
             _timer.Interval = TimeSpan.FromMinutes(10);
-            _timer.Tick += async (s, e) => await UpdateAllStocksAsync();
+            _timer.Tick += Timer_Tick;
             _timer.Start();
 
             await UpdateAllStocksAsync();
@@ -469,6 +469,10 @@ namespace gtt_sidebar.Widgets.StockWidget
             }
         }
 
+        private async void Timer_Tick(object sender, EventArgs e)
+        {
+            await UpdateAllStocksAsync();
+        }
         private string FormatCurrency(double amount)
         {
             if (amount >= 1000)
@@ -569,8 +573,15 @@ namespace gtt_sidebar.Widgets.StockWidget
 
         void IWidget.Dispose()
         {
-            _timer?.Stop();
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= Timer_Tick;
+                _timer = null;
+            }
+
             _httpClient?.Dispose();
+            _httpClient = null;
         }
     }
 }

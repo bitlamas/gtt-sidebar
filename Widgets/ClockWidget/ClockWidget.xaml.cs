@@ -43,8 +43,12 @@ namespace gtt_sidebar.Widgets.ClockWidget
 
         public void Dispose()
         {
-            _timer?.Stop();
-            _timer = null;
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= Timer_Tick;
+                _timer = null;
+            }
         }
     }
 }

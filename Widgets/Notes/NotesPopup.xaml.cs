@@ -534,7 +534,14 @@ namespace gtt_sidebar.Widgets.Notes
         {
             // Save before closing
             SaveIfChanged();
-            _autoSaveTimer?.Stop();
+
+            if (_autoSaveTimer != null)
+            {
+                _autoSaveTimer.Stop();
+                _autoSaveTimer.Tick -= (sender, args) => SaveIfChanged();
+                _autoSaveTimer = null;
+            }
+
             base.OnClosing(e);
         }
 

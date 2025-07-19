@@ -13,7 +13,7 @@ namespace gtt_sidebar.Widgets.WeatherWidget
 {
     public partial class WeatherWidget : UserControl, IWidget
     {
-        private readonly HttpClient _httpClient;
+        private HttpClient _httpClient;
         private DispatcherTimer _timer;
         private string _currentCity = "Saint-Joseph-de-Beauce,QC,CA";
 
@@ -35,7 +35,7 @@ namespace gtt_sidebar.Widgets.WeatherWidget
             // Update every 30 minutes
             _timer = new DispatcherTimer();
             _timer.Interval = TimeSpan.FromMinutes(30);
-            _timer.Tick += async (s, e) => await UpdateWeatherAsync();
+            _timer.Tick += Timer_Tick;
             _timer.Start();
 
             await UpdateWeatherAsync();
@@ -73,6 +73,11 @@ namespace gtt_sidebar.Widgets.WeatherWidget
                 Day3Icon.Text = "?";
                 Day3Temp.Text = "--°";
             }
+        }
+
+        private async void Timer_Tick(object sender, EventArgs e)
+        {
+            await UpdateWeatherAsync();
         }
 
         private void UpdateCurrentWeather(JObject data)
@@ -157,8 +162,15 @@ namespace gtt_sidebar.Widgets.WeatherWidget
 
         public void Dispose()
         {
-            _timer?.Stop();
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= Timer_Tick;
+                _timer = null;
+            }
+
             _httpClient?.Dispose();
+            _httpClient = null;
         }
     }
 }
