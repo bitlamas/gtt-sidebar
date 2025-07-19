@@ -164,15 +164,11 @@ namespace gtt_sidebar.Core.Settings
 
             // Apply settings
             SettingsApplied?.Invoke(_currentSettings);
-
-            System.Diagnostics.Debug.WriteLine($"Settings applied: Position={_currentSettings.Window.Position}, Width={_currentSettings.Window.Width}");
-
             this.Close();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("Settings cancelled");
             this.Close();
         }
 

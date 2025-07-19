@@ -16,6 +16,12 @@ namespace gtt_sidebar.Widgets.WeatherWidget
         private HttpClient _httpClient;
         private DispatcherTimer _timer;
         private string _currentCity = "Saint-Joseph-de-Beauce,QC,CA";
+        private int _retryCount = 0;
+        private const int MAX_IMMEDIATE_RETRIES = 10;
+        private const int RETRY_DELAY_SECONDS = 10;
+        private const int FALLBACK_RETRY_MINUTES = 5;
+        private DispatcherTimer _retryTimer;
+        private bool _isRetrying = false;
 
         // Free OpenWeatherMap API key - you'll need to get your own
         private const string API_KEY = "c9b2bd0c1ea061353ec9b02831f77c57"; // Get from openweathermap.org
@@ -57,27 +63,62 @@ namespace gtt_sidebar.Widgets.WeatherWidget
 
                 UpdateCurrentWeather(currentData);
                 UpdateForecast(forecastData);
+                _retryCount = 0;
+                _isRetrying = false;
+                StopRetryTimer();
+
+                System.Diagnostics.Debug.WriteLine("Weather updated successfully");
             }
             catch (Exception ex)
             {
-                // Handle errors gracefully
-                System.Diagnostics.Debug.WriteLine($"Weather update error: {ex.Message}");
-                WeatherDescription.Text = "Error loading";
-                Temperature.Text = "--°C";
+                System.Diagnostics.Debug.WriteLine($"Weather update error (attempt {_retryCount + 1}): {ex.Message}");
+                await HandleWeatherError();
+            }
+        }
+        private async Task HandleWeatherError()
+        {
+            _retryCount++;
 
-                // Clear forecast on error
-                Day1Icon.Text = "?";
-                Day1Temp.Text = "--°";
-                Day2Icon.Text = "?";
-                Day2Temp.Text = "--°";
-                Day3Icon.Text = "?";
-                Day3Temp.Text = "--°";
+            // Show error state
+            WeatherDescription.Text = $"Error loading (retry {_retryCount})";
+            Temperature.Text = "--°C";
+
+            // Clear forecast on error
+            Day1Icon.Text = "?";
+            Day1Temp.Text = "--°";
+            Day2Icon.Text = "?";
+            Day2Temp.Text = "--°";
+            Day3Icon.Text = "?";
+            Day3Temp.Text = "--°";
+
+            if (_retryCount <= MAX_IMMEDIATE_RETRIES)
+            {
+                // Immediate retries: wait 10 seconds
+                System.Diagnostics.Debug.WriteLine($"Scheduling immediate retry {_retryCount}/{MAX_IMMEDIATE_RETRIES} in {RETRY_DELAY_SECONDS} seconds");
+
+                _isRetrying = true;
+                StartRetryTimer(TimeSpan.FromSeconds(RETRY_DELAY_SECONDS));
+            }
+            else
+            {
+                // Fallback retries: wait 5 minutes
+                System.Diagnostics.Debug.WriteLine($"Switching to fallback retry mode - will retry every {FALLBACK_RETRY_MINUTES} minutes");
+
+                _isRetrying = true;
+                StartRetryTimer(TimeSpan.FromMinutes(FALLBACK_RETRY_MINUTES));
+
+                WeatherDescription.Text = "Connection issues";
             }
         }
 
         private async void Timer_Tick(object sender, EventArgs e)
         {
-            await UpdateWeatherAsync();
+            // Don't interfere if we're in retry mode
+            if (!_isRetrying)
+            {
+                _retryCount = 0; // Reset retry count for new update cycle
+                await UpdateWeatherAsync();
+            }
         }
 
         private void UpdateCurrentWeather(JObject data)
@@ -160,6 +201,34 @@ namespace gtt_sidebar.Widgets.WeatherWidget
             }
         }
 
+        private void StartRetryTimer(TimeSpan interval)
+        {
+            StopRetryTimer();
+
+            _retryTimer = new DispatcherTimer();
+            _retryTimer.Interval = interval;
+            _retryTimer.Tick += RetryTimer_Tick;
+            _retryTimer.Start();
+        }
+
+        private void StopRetryTimer()
+        {
+            if (_retryTimer != null)
+            {
+                _retryTimer.Stop();
+                _retryTimer.Tick -= RetryTimer_Tick;
+                _retryTimer = null;
+            }
+        }
+
+        private async void RetryTimer_Tick(object sender, EventArgs e)
+        {
+            if (_isRetrying)
+            {
+                StopRetryTimer();
+                await UpdateWeatherAsync();
+            }
+        }
         public void Dispose()
         {
             if (_timer != null)
@@ -168,6 +237,7 @@ namespace gtt_sidebar.Widgets.WeatherWidget
                 _timer.Tick -= Timer_Tick;
                 _timer = null;
             }
+            StopRetryTimer();
 
             _httpClient?.Dispose();
             _httpClient = null;
