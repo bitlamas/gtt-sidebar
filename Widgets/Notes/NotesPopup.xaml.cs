@@ -405,6 +405,19 @@ namespace gtt_sidebar.Widgets.Notes
                 return;
             }
 
+            // ADD THIS CONFIRMATION DIALOG:
+            var result = System.Windows.MessageBox.Show(
+                "Are you sure you want to delete this note?",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                System.Diagnostics.Debug.WriteLine("CloseTabButton_Click: User cancelled deletion");
+                return; // User clicked No or closed dialog, don't delete
+            }
+
             var tabIndexToDelete = _notesData.Tabs.IndexOf(tabToDelete);
             System.Diagnostics.Debug.WriteLine($"CloseTabButton_Click: Deleting tab '{tabToDelete.Title}' (ID: {tabId}, Index: {tabIndexToDelete}, IsDefault: {tabToDelete.IsDefault})");
 

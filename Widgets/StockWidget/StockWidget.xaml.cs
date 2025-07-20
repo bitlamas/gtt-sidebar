@@ -510,8 +510,13 @@ namespace gtt_sidebar.Widgets.StockWidget
 
             stock.ChartCanvas.Children.Clear();
 
-            var width = 108.0;
-            var height = 12.0;
+            // Use actual canvas dimensions instead of hardcoded values
+            var width = stock.ChartCanvas.ActualWidth;
+            var height = stock.ChartCanvas.ActualHeight;
+
+            // Fallback to expected dimensions if ActualWidth isn't set yet
+            if (width <= 0) width = 108.0;
+            if (height <= 0) height = 12.0;
 
             // Calculate percentage changes for the last 14 days (skip the first day as reference)
             var percentageChanges = new List<(DateTime date, double price, double percentageChange)>();
@@ -536,7 +541,12 @@ namespace gtt_sidebar.Widgets.StockWidget
             var maxAbsChange = percentageChanges.Max(x => Math.Abs(x.percentageChange));
             if (maxAbsChange == 0) maxAbsChange = 1; // Avoid division by zero
 
-            var barWidth = width / percentageChanges.Count;
+            // Calculate bar spacing to fit within canvas bounds
+            var totalBars = percentageChanges.Count;
+            var barSpacing = 1.0; // 1 pixel between bars
+            var totalSpacing = (totalBars - 1) * barSpacing;
+            var availableWidthForBars = width - totalSpacing;
+            var barWidth = availableWidthForBars / totalBars;
 
             for (int i = 0; i < percentageChanges.Count; i++)
             {
@@ -549,7 +559,8 @@ namespace gtt_sidebar.Widgets.StockWidget
                 var y = change.percentageChange >= 0 ? centerY - barHeight : centerY;
                 var actualHeight = Math.Max(barHeight, 1); // Minimum height so it's visible
 
-                var x = i * barWidth;
+                // Calculate x position with proper spacing
+                var x = i * (barWidth + barSpacing);
 
                 // Choose color: blue for positive, orange for negative
                 var color = change.percentageChange >= 0
@@ -558,7 +569,7 @@ namespace gtt_sidebar.Widgets.StockWidget
 
                 var rect = new Rectangle
                 {
-                    Width = barWidth - 1,
+                    Width = barWidth,
                     Height = actualHeight,
                     Fill = new SolidColorBrush(color),
                     ToolTip = $"{change.date:MMM dd}: {FormatCurrency(change.price)} ({change.percentageChange:+0.0;-0.0}%)"
