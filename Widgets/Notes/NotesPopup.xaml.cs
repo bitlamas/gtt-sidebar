@@ -527,6 +527,10 @@ namespace gtt_sidebar.Widgets.Notes
             // Save current tab content before closing
             System.Diagnostics.Debug.WriteLine($"Window_Deactivated: Saving content for tab {_currentlyEditingTabId}");
             SaveIfChanged();
+
+            // ADD THIS: Ensure the widget knows which tab was last active
+            NotesChanged?.Invoke(_notesData);
+
             this.Hide();
         }
 

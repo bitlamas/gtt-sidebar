@@ -64,6 +64,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Core\Managers\StartupManager.cs" />
     <Compile Include="Core\Settings\SettingsData.cs" />
     <Compile Include="Core\Settings\SettingsStorage.cs" />
     <Compile Include="Core\Settings\SettingsWindow.xaml.cs">

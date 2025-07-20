@@ -219,18 +219,32 @@ namespace gtt_sidebar.Widgets.Notes
         /// <summary>
         /// Gets a preview of the content for the widget display
         /// </summary>
-        public string GetPreview(int maxLength = 100)
+        public string GetPreview(int maxLength = 250)
         {
             if (string.IsNullOrWhiteSpace(Content))
                 return "Click to add notes...";
 
-            // Simple text preview without markdown processing
             var preview = Content.Trim();
 
+            // Keep line breaks but limit to reasonable length
             if (preview.Length <= maxLength)
                 return preview;
 
-            return preview.Substring(0, maxLength) + "...";
+            // Find a good breaking point near the limit
+            var breakPoint = maxLength;
+            var lastSpace = preview.LastIndexOf(' ', maxLength);
+            var lastLineBreak = Math.Max(
+                preview.LastIndexOf('\n', maxLength),
+                preview.LastIndexOf('\r', maxLength)
+            );
+
+            // Prefer line break, then space, then hard cut
+            if (lastLineBreak > maxLength - 30)
+                breakPoint = lastLineBreak;
+            else if (lastSpace > maxLength - 30)
+                breakPoint = lastSpace;
+
+            return preview.Substring(0, breakPoint) + "...";
         }
     }
 }

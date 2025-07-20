@@ -62,7 +62,9 @@ namespace gtt_sidebar.Core.Application
             contextMenu.Items.Add("-");
             contextMenu.Items.Add("Settings", null, (s, e) => SettingsButton_Click(null, null));
             var alwaysOnTopItem = contextMenu.Items.Add("Always on Top", null, (s, e) => ToggleAlwaysOnTop());
-            ((ToolStripMenuItem)alwaysOnTopItem).Checked = this.Topmost; // Use window property
+            ((ToolStripMenuItem)alwaysOnTopItem).Checked = this.Topmost;
+            var runAtStartupItem = contextMenu.Items.Add("Run at Startup", null, (s, e) => ToggleRunAtStartup());
+            ((ToolStripMenuItem)runAtStartupItem).Checked = StartupManager.IsStartupEnabled();
             contextMenu.Items.Add("-");
             contextMenu.Items.Add("Exit", null, (s, e) => ExitApplication());
 
@@ -73,19 +75,28 @@ namespace gtt_sidebar.Core.Application
         private void ToggleAlwaysOnTop()
         {
             this.Topmost = !this.Topmost;
-            UpdateTrayMenuCheck();
+            UpdateTrayMenuChecks();
         }
 
-       
 
-        private void UpdateTrayMenuCheck()
+
+        private void UpdateTrayMenuChecks()
         {
+            if (_trayIcon?.ContextMenuStrip?.Items == null)
+                return;
+
             for (int i = 0; i < _trayIcon.ContextMenuStrip.Items.Count; i++)
             {
-                if (_trayIcon.ContextMenuStrip.Items[i].Text == "Always on Top")
+                var item = _trayIcon.ContextMenuStrip.Items[i] as ToolStripMenuItem;
+                if (item == null) continue;
+
+                if (item.Text == "Always on Top")
                 {
-                    ((ToolStripMenuItem)_trayIcon.ContextMenuStrip.Items[i]).Checked = this.Topmost;
-                    break;
+                    item.Checked = this.Topmost;
+                }
+                else if (item.Text == "Run at Startup")
+                {
+                    item.Checked = StartupManager.IsStartupEnabled();
                 }
             }
         }
@@ -168,6 +179,27 @@ namespace gtt_sidebar.Core.Application
             _currentSettings = newSettings;
             SettingsStorage.SaveSettings(_currentSettings);
             ApplySettings(_currentSettings);
+        }
+
+        private void ToggleRunAtStartup()
+        {
+            var currentStatus = StartupManager.IsStartupEnabled();
+            var newStatus = !currentStatus;
+
+            if (StartupManager.SetStartupEnabled(newStatus))
+            {
+                System.Diagnostics.Debug.WriteLine($"Startup status changed: {newStatus}");
+                UpdateTrayMenuChecks(); // Update both checkmarks
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("Failed to change startup status");
+                // Optionally show a message box to the user
+                System.Windows.MessageBox.Show("Failed to change startup setting. Please check permissions.",
+                               "Startup Setting",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Warning);
+            }
         }
 
         protected override void OnSourceInitialized(EventArgs e)
