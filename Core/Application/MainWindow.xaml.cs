@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using System.Drawing;
@@ -34,7 +35,24 @@ namespace gtt_sidebar.Core.Application
         private void CreateTrayIcon()
         {
             _trayIcon = new NotifyIcon();
-            _trayIcon.Icon = SystemIcons.Application;
+            try
+            {
+                // Load icon from embedded resource
+                var iconUri = new Uri("pack://application:,,,/gtt-sidebar-icon.ico");
+                var resourceStream = System.Windows.Application.GetResourceStream(iconUri);
+                if (resourceStream != null)
+                {
+                    _trayIcon.Icon = new System.Drawing.Icon(resourceStream.Stream);
+                }
+                else
+                {
+                    _trayIcon.Icon = SystemIcons.Application;
+                }
+            }
+            catch (Exception)
+            {
+                _trayIcon.Icon = SystemIcons.Application;
+            }
             _trayIcon.Text = "gtt sidebar";
             _trayIcon.Visible = true;
 
