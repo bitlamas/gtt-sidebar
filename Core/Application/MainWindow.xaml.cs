@@ -162,6 +162,8 @@ namespace gtt_sidebar.Core.Application
 
             _settingsWindow = new SettingsWindow(_currentSettings);
             _settingsWindow.SettingsApplied += OnSettingsApplied;
+            _settingsWindow.ShortcutsChanged += OnShortcutsChanged;
+
 
             _settingsWindow.Left = this.Left - _settingsWindow.Width - 10;
             _settingsWindow.Top = this.Top;
@@ -174,6 +176,35 @@ namespace gtt_sidebar.Core.Application
             _settingsWindow.Show();
         }
 
+        private void OnShortcutsChanged()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("OnShortcutsChanged: Starting widget refresh...");
+
+                // Find the shortcuts widget and refresh it
+                var widgets = _widgetManager.GetLoadedWidgets();
+                System.Diagnostics.Debug.WriteLine($"Found {widgets.Count} total widgets");
+
+                foreach (var widget in widgets)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  Widget: {widget.Name}");
+                    if (widget.Name == "Shortcuts" && widget is gtt_sidebar.Widgets.Shortcuts.ShortcutsWidget shortcutsWidget)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Found shortcuts widget, calling RefreshShortcuts()");
+                        shortcutsWidget.RefreshShortcuts();
+                        System.Diagnostics.Debug.WriteLine("Refreshed shortcuts widget from settings change");
+                        return;
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine("ERROR: Shortcuts widget not found!");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error refreshing shortcuts widget: {ex.Message}");
+            }
+        }
         private void OnSettingsApplied(SettingsData newSettings)
         {
             _currentSettings = newSettings;
@@ -214,9 +245,14 @@ namespace gtt_sidebar.Core.Application
             base.OnClosed(e);
             _widgetManager?.DisposeWidgets();
 
-            if (_settingsWindow != null && _settingsWindow.IsVisible)
+            if (_settingsWindow != null)
             {
-                _settingsWindow.Close();
+                _settingsWindow.SettingsApplied -= OnSettingsApplied;
+                _settingsWindow.ShortcutsChanged -= OnShortcutsChanged; // ADD THIS LINE
+                if (_settingsWindow.IsVisible)
+                {
+                    _settingsWindow.Close();
+                }
             }
         }
 

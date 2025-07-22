@@ -65,16 +65,25 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Core\Managers\StartupManager.cs" />
+    <Compile Include="Core\Settings\IconCatalog.cs" />
+    <Compile Include="Core\Settings\IconPicker.xaml.cs">
+      <DependentUpon>IconPicker.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Core\Settings\SettingsData.cs" />
     <Compile Include="Core\Settings\SettingsStorage.cs" />
     <Compile Include="Core\Settings\SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Core\Settings\ShortcutData.cs" />
+    <Compile Include="Core\Settings\ShortcutStorage.cs" />
     <Compile Include="Widgets\Notes\NotesData.cs" />
     <Compile Include="Widgets\Notes\NotesStorage.cs" />
     <Compile Include="Widgets\Notes\MarkdownHelper.cs" />
     <Compile Include="Widgets\Notes\NotesPopup.xaml.cs">
       <DependentUpon>NotesPopup.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Widgets\Shortcuts\ShortcutsWidget.xaml.cs">
+      <DependentUpon>ShortcutsWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Core\Interfaces\IConfigurableWidget.cs" />
     <Compile Include="Core\Interfaces\IWidgetMetadata.cs" />
@@ -86,6 +95,9 @@
     <Compile Include="Widgets\Notes\NotesWidget.xaml.cs">
       <DependentUpon>NotesWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Widgets\Shortcuts\ShortcutsWidget.xaml.cs">
+      <DependentUpon>ShortcutsWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Widgets\StockWidget\StockWidget.xaml.cs">
       <DependentUpon>StockWidget.xaml</DependentUpon>
     </Compile>
@@ -95,6 +107,10 @@
     <Page Include="Core\Application\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Core\Settings\IconPicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Core\Settings\SettingsWindow.xaml">
       <SubType>Designer</SubType>
@@ -120,6 +136,10 @@
     <Page Include="Widgets\Notes\NotesWidget.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Widgets\Shortcuts\ShortcutsWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Widgets\StockWidget\StockWidget.xaml">
       <SubType>Designer</SubType>
