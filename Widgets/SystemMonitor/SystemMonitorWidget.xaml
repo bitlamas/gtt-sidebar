@@ -1,7 +1,7 @@
 ﻿<UserControl x:Class="gtt_sidebar.Widgets.SystemMonitor.SystemMonitorWidget"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Width="113" Height="42"
+             Width="117" Height="42"
              Background="White"
              Cursor="Hand">
 

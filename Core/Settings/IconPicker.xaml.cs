@@ -21,7 +21,7 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
-        /// Load all built-in icons into the grid
+        /// Load all built-in Phosphor icons into the grid
         /// </summary>
         private void LoadIcons()
         {
@@ -29,13 +29,13 @@ namespace gtt_sidebar.Core.Settings
             {
                 IconsGrid.Children.Clear();
 
-                foreach (var icon in IconCatalog.BuiltInIcons)
+                foreach (var iconName in IconCatalog.BuiltInIcons)
                 {
-                    var button = CreateIconButton(icon);
+                    var button = CreateIconButton(iconName);
                     IconsGrid.Children.Add(button);
                 }
 
-                System.Diagnostics.Debug.WriteLine($"Loaded {IconCatalog.BuiltInIcons.Count} icons into picker");
+                System.Diagnostics.Debug.WriteLine($"Loaded {IconCatalog.BuiltInIcons.Count} Phosphor icons into picker");
             }
             catch (Exception ex)
             {
@@ -44,28 +44,64 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
-        /// Create a clickable button for an icon
+        /// Create a clickable button for a Phosphor icon
         /// </summary>
-        private Button CreateIconButton(string icon)
+        private Button CreateIconButton(string iconName)
         {
             var button = new Button
             {
-                Width = 26,  // Increased from 24 to prevent cropping
-                Height = 26, // Increased from 24 to prevent cropping
+                Width = 26,
+                Height = 26,
                 Margin = new Thickness(2),
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(1),
                 BorderBrush = Brushes.Transparent,
-                Content = icon,
-                FontSize = 18, // Match our widget icon size
                 Cursor = Cursors.Hand,
-                Tag = icon,
-                HorizontalContentAlignment = HorizontalAlignment.Center,  // Center horizontally
-                VerticalContentAlignment = VerticalAlignment.Center,      // Center vertically
-                Padding = new Thickness(0) // Remove default button padding
+                Tag = iconName,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Padding = new Thickness(0),
+                ToolTip = iconName.Replace("-", " ") // Show friendly name
             };
 
-            // Add hover effects (no tooltip)
+            // Try to load PNG icon from DefaultIcons folder
+            var iconPath = GetIconPath(iconName);
+            if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+            {
+                // Show PNG image
+                var image = new Image
+                {
+                    Width = 18,
+                    Height = 18,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsHitTestVisible = false
+                };
+
+                try
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(iconPath);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    image.Source = bitmap;
+                    button.Content = image;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error loading icon {iconName}: {ex.Message}");
+                    // Fallback to text
+                    button.Content = CreateTextFallback(iconName);
+                }
+            }
+            else
+            {
+                // Fallback to abbreviated text
+                button.Content = CreateTextFallback(iconName);
+            }
+
+            // Add hover effects
             button.MouseEnter += (s, e) => button.BorderBrush = new SolidColorBrush(Color.FromRgb(100, 149, 237));
             button.MouseLeave += (s, e) => button.BorderBrush = Brushes.Transparent;
 
@@ -75,24 +111,76 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
+        /// Create text fallback for missing PNG icons
+        /// </summary>
+        private TextBlock CreateTextFallback(string iconName)
+        {
+            var text = iconName.Length >= 2 ? iconName.Substring(0, 2).ToUpper() : iconName.ToUpper();
+
+            return new TextBlock
+            {
+                Text = text,
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                IsHitTestVisible = false,
+                Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102))
+            };
+        }
+
+        /// <summary>
+        /// Get the path to a Phosphor icon PNG file
+        /// </summary>
+        private string GetIconPath(string iconName)
+        {
+            try
+            {
+                // Try different possible locations
+                var locations = new[]
+                {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Core", "Icons", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "gtt-sidebar", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine("Core", "Icons", "DefaultIcons", $"{iconName}.png")
+                };
+
+                foreach (var path in locations)
+                {
+                    if (File.Exists(path))
+                    {
+                        return path;
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"PNG not found for {iconName} in any location");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting icon path for {iconName}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Handle icon button click
         /// </summary>
         private void IconButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
-            var icon = button?.Tag as string;
+            var iconName = button?.Tag as string;
 
-            if (!string.IsNullOrEmpty(icon))
+            if (!string.IsNullOrEmpty(iconName))
             {
-                System.Diagnostics.Debug.WriteLine($"Selected built-in icon: {icon}");
-                IconSelected?.Invoke("builtin", icon);
+                System.Diagnostics.Debug.WriteLine($"Selected Phosphor icon: {iconName}");
+                IconSelected?.Invoke("builtin", iconName);
                 _isClosing = true;
                 this.Close();
             }
         }
 
         /// <summary>
-        /// Handle custom icon button click (FIXED VERSION)
+        /// Handle custom icon button click
         /// </summary>
         private void CustomIconButton_Click(object sender, RoutedEventArgs e)
         {
@@ -166,7 +254,7 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
-        /// Process and resize a custom icon file (SAFER VERSION)
+        /// Process and resize a custom icon file to 32x32 pixels
         /// </summary>
         private string ProcessCustomIcon(string sourceFilePath, string iconId)
         {
@@ -180,7 +268,7 @@ namespace gtt_sidebar.Core.Settings
                     return null;
                 }
 
-                // Load and process the image in a safer way
+                // Load and process the image
                 BitmapSource processedImage = null;
 
                 using (var fileStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read))
@@ -189,8 +277,8 @@ namespace gtt_sidebar.Core.Settings
                     var decoder = BitmapDecoder.Create(fileStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
                     var frame = decoder.Frames[0];
 
-                    // Create a resized version (18x18)
-                    var transform = new ScaleTransform(18.0 / frame.PixelWidth, 18.0 / frame.PixelHeight);
+                    // Create a resized version (32x32 for future-proofing)
+                    var transform = new ScaleTransform(32.0 / frame.PixelWidth, 32.0 / frame.PixelHeight);
                     processedImage = new TransformedBitmap(frame, transform);
                 }
 
@@ -244,8 +332,6 @@ namespace gtt_sidebar.Core.Settings
             this.Top = top;
             this.WindowStartupLocation = WindowStartupLocation.Manual;
         }
-
-        
 
         /// <summary>
         /// Handle window deactivation - close the picker
