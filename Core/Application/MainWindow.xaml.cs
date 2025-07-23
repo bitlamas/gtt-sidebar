@@ -164,6 +164,8 @@ namespace gtt_sidebar.Core.Application
             _settingsWindow.SettingsApplied += OnSettingsApplied;
             _settingsWindow.ShortcutsChanged += OnShortcutsChanged;
 
+            _settingsWindow.SystemMonitorSettingsChanged += OnSystemMonitorSettingsChanged;
+
 
             _settingsWindow.Left = this.Left - _settingsWindow.Width - 10;
             _settingsWindow.Top = this.Top;
@@ -174,6 +176,36 @@ namespace gtt_sidebar.Core.Application
             }
 
             _settingsWindow.Show();
+        }
+
+        private void OnSystemMonitorSettingsChanged()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("OnSystemMonitorSettingsChanged: Starting System Monitor refresh...");
+
+                // Find the system monitor widget and refresh it
+                var widgets = _widgetManager.GetLoadedWidgets();
+                System.Diagnostics.Debug.WriteLine($"Found {widgets.Count} total widgets");
+
+                foreach (var widget in widgets)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  Widget: {widget.Name}");
+                    if (widget.Name == "System Monitor" && widget is gtt_sidebar.Widgets.SystemMonitor.SystemMonitorWidget systemMonitorWidget)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Found system monitor widget, calling RefreshSettings()");
+                        systemMonitorWidget.RefreshSettings();
+                        System.Diagnostics.Debug.WriteLine("Refreshed system monitor widget from settings change");
+                        return;
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine("ERROR: System Monitor widget not found!");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error refreshing system monitor widget: {ex.Message}");
+            }
         }
 
         private void OnShortcutsChanged()
@@ -248,7 +280,9 @@ namespace gtt_sidebar.Core.Application
             if (_settingsWindow != null)
             {
                 _settingsWindow.SettingsApplied -= OnSettingsApplied;
-                _settingsWindow.ShortcutsChanged -= OnShortcutsChanged; // ADD THIS LINE
+                _settingsWindow.ShortcutsChanged -= OnShortcutsChanged;
+                _settingsWindow.SystemMonitorSettingsChanged -= OnSystemMonitorSettingsChanged;
+
                 if (_settingsWindow.IsVisible)
                 {
                     _settingsWindow.Close();

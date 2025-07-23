@@ -14,6 +14,7 @@ namespace gtt_sidebar.Core.Settings
     public partial class SettingsWindow : Window
     {
         public event Action ShortcutsChanged;
+        public event Action SystemMonitorSettingsChanged;
         private SettingsData _originalSettings;
         private SettingsData _currentSettings;
         private ShortcutsData _shortcutsData;
@@ -1030,9 +1031,64 @@ namespace gtt_sidebar.Core.Settings
                     MarginBottom = settings.Window.MarginBottom,
                     MarginSide = settings.Window.MarginSide
                 },
+                SystemMonitor = new SystemMonitorSettings
+                {
+                    CpuThreshold = settings.SystemMonitor.CpuThreshold,
+                    RamThreshold = settings.SystemMonitor.RamThreshold,
+                    PingThreshold = settings.SystemMonitor.PingThreshold,
+                    UpdateFrequencySeconds = settings.SystemMonitor.UpdateFrequencySeconds
+                },
                 Version = settings.Version
             };
         }
+
+        #region System Monitor Settings
+
+        private void SystemMonitorHeader_Click(object sender, MouseButtonEventArgs e)
+        {
+            // Toggle section visibility
+            if (SystemMonitorContent.Visibility == Visibility.Visible)
+            {
+                SystemMonitorContent.Visibility = Visibility.Collapsed;
+                SystemMonitorToggle.Text = "▶";
+            }
+            else
+            {
+                SystemMonitorContent.Visibility = Visibility.Visible;
+                SystemMonitorToggle.Text = "▼";
+            }
+        }
+
+        private void CpuThresholdSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (CpuThresholdValue != null)
+            {
+                CpuThresholdValue.Text = $"{(int)e.NewValue}%";
+            }
+        }
+
+        private void RamThresholdSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (RamThresholdValue != null)
+            {
+                RamThresholdValue.Text = $"{(int)e.NewValue}%";
+            }
+        }
+
+        private void PingThresholdSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (PingThresholdValue != null)
+            {
+                PingThresholdValue.Text = $"{(int)e.NewValue}ms";
+            }
+        }
+
+        private void UpdateFrequencyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Nothing special needed here - just for UI feedback
+        }
+
+        #endregion
 
         private void LoadSettingsToUI()
         {
@@ -1053,6 +1109,38 @@ namespace gtt_sidebar.Core.Settings
 
             MarginSideSlider.Value = _currentSettings.Window.MarginSide;
             MarginSideValueText.Text = $"{_currentSettings.Window.MarginSide:F0} px";
+
+            LoadSystemMonitorSettingsToUI();
+        }
+
+        private void LoadSystemMonitorSettingsToUI()
+        {
+            try
+            {
+                // Load System Monitor settings (only if the controls exist)
+                if (CpuThresholdSlider != null)
+                {
+                    CpuThresholdSlider.Value = _currentSettings.SystemMonitor.CpuThreshold;
+                    RamThresholdSlider.Value = _currentSettings.SystemMonitor.RamThreshold;
+                    PingThresholdSlider.Value = _currentSettings.SystemMonitor.PingThreshold;
+
+                    // Set update frequency
+                    foreach (ComboBoxItem item in UpdateFrequencyComboBox.Items)
+                    {
+                        if (item.Tag.ToString() == _currentSettings.SystemMonitor.UpdateFrequencySeconds.ToString())
+                        {
+                            UpdateFrequencyComboBox.SelectedItem = item;
+                            break;
+                        }
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Settings: Loaded System Monitor settings - CPU: {_currentSettings.SystemMonitor.CpuThreshold}%, RAM: {_currentSettings.SystemMonitor.RamThreshold}%, Ping: {_currentSettings.SystemMonitor.PingThreshold}ms, Freq: {_currentSettings.SystemMonitor.UpdateFrequencySeconds}s");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Settings: Error loading System Monitor settings: {ex.Message}");
+            }
         }
 
         private void UpdateCurrentSettings()
@@ -1069,6 +1157,34 @@ namespace gtt_sidebar.Core.Settings
             _currentSettings.Window.MarginTop = MarginTopSlider.Value;
             _currentSettings.Window.MarginBottom = MarginBottomSlider.Value;
             _currentSettings.Window.MarginSide = MarginSideSlider.Value;
+
+            UpdateSystemMonitorSettings();
+
+        }
+        private void UpdateSystemMonitorSettings()
+        {
+            try
+            {
+                if (CpuThresholdSlider != null)
+                {
+                    // Save threshold values
+                    _currentSettings.SystemMonitor.CpuThreshold = (int)CpuThresholdSlider.Value;
+                    _currentSettings.SystemMonitor.RamThreshold = (int)RamThresholdSlider.Value;
+                    _currentSettings.SystemMonitor.PingThreshold = (int)PingThresholdSlider.Value;
+
+                    // Save update frequency
+                    if (UpdateFrequencyComboBox.SelectedItem is ComboBoxItem selectedItem)
+                    {
+                        _currentSettings.SystemMonitor.UpdateFrequencySeconds = int.Parse(selectedItem.Tag.ToString());
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Settings: Updated System Monitor settings - CPU: {_currentSettings.SystemMonitor.CpuThreshold}%, RAM: {_currentSettings.SystemMonitor.RamThreshold}%, Ping: {_currentSettings.SystemMonitor.PingThreshold}ms, Freq: {_currentSettings.SystemMonitor.UpdateFrequencySeconds}s");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Settings: Error updating System Monitor settings: {ex.Message}");
+            }
         }
 
         private void WidthSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -1164,6 +1280,7 @@ namespace gtt_sidebar.Core.Settings
 
             // TRIGGER SHORTCUTS REFRESH TOO
             ShortcutsChanged?.Invoke();
+            SystemMonitorSettingsChanged?.Invoke();
 
             this.Close();
         }

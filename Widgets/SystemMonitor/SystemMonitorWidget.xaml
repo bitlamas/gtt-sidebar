@@ -1,0 +1,75 @@
+﻿<UserControl x:Class="gtt_sidebar.Widgets.SystemMonitor.SystemMonitorWidget"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="113" Height="42"
+             Background="White"
+             Cursor="Hand">
+
+    <Border BorderBrush="#E0E0E0" BorderThickness="1" Background="White" CornerRadius="3">
+        <Grid Margin="5">
+            <!-- Header Row -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Headers -->
+            <Grid Grid.Row="0" Margin="0,2,0,1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="CPU" 
+                          FontSize="8" FontWeight="Bold" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"
+                          Foreground="#666666"/>
+
+                <TextBlock Grid.Column="1" Text="RAM" 
+                          FontSize="8" FontWeight="Bold" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"
+                          Foreground="#666666"/>
+
+                <TextBlock Grid.Column="2" Text="PING" 
+                          FontSize="8" FontWeight="Bold" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"
+                          Foreground="#666666"/>
+            </Grid>
+
+            <!-- Values Row -->
+            <Grid Grid.Row="1" Margin="0,1,0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="CpuValue" Grid.Column="0" Text="45%" 
+                          FontSize="9" FontWeight="Normal" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"
+                          Foreground="Black"
+                          ToolTip="CPU usage"/>
+
+                <TextBlock x:Name="RamValue" Grid.Column="1" Text="62%" 
+                          FontSize="9" FontWeight="Normal" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"
+                          Foreground="Black"
+                          ToolTip="RAM usage"/>
+
+                <TextBlock x:Name="PingValue" Grid.Column="2" Text="42ms" 
+                          FontSize="9" FontWeight="Normal" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"
+                          Foreground="Black"
+                          ToolTip="Network ping latency"/>
+            </Grid>
+        </Grid>
+    </Border>
+
+</UserControl>
