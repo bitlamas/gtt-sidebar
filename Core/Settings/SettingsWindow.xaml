@@ -1,6 +1,6 @@
 ﻿<Window x:Class="gtt_sidebar.Core.Settings.SettingsWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings"
         Width="350"
         Height="600"
@@ -12,7 +12,6 @@
         Topmost="True"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterScreen">
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
@@ -22,7 +21,6 @@
             <RowDefinition Height="50"/>
             <!-- Buttons -->
         </Grid.RowDefinitions>
-
         <!-- Header -->
         <Border Grid.Row="0" 
         Background="#F5F5F5" 
@@ -50,13 +48,11 @@
                        Cursor="Hand"/>
             </Grid>
         </Border>
-
         <!-- Content -->
         <ScrollViewer Grid.Row="1" 
                      VerticalScrollBarVisibility="Auto"
                      Margin="20,20,20,10">
             <StackPanel>
-
                 <!-- Window & Layout Section -->
                 <Border Background="#F8F8F8" 
        BorderBrush="#E0E0E0" 
@@ -84,24 +80,20 @@
                                 </Grid>
                             </Border>
                         </Border>
-
                         <!-- Content (collapsible) -->
                         <StackPanel x:Name="WindowLayoutContent" Margin="16">
-
                             <!-- Position -->
                             <Grid Margin="0,0,0,16">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-
                                 <TextBlock Grid.Row="0"
                                       Text="Position" 
                                       FontSize="10" 
                                       FontWeight="SemiBold"
                                       Foreground="#666666"
                                       Margin="0,0,0,8"/>
-
                                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                                     <RadioButton x:Name="RightPositionRadio" 
                                            Content="Right" 
@@ -115,14 +107,12 @@
                                            FontSize="10"/>
                                 </StackPanel>
                             </Grid>
-
                             <!-- Width -->
                             <Grid Margin="0,0,0,16">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <TextBlock Text="Width" 
                                           FontSize="10" 
@@ -135,7 +125,6 @@
                                           Foreground="#999999"
                                           HorizontalAlignment="Right"/>
                                 </Grid>
-
                                 <Slider x:Name="WidthSlider"
                                    Grid.Row="1"
                                    Minimum="100" 
@@ -145,14 +134,12 @@
                                    IsSnapToTickEnabled="True"
                                    ValueChanged="WidthSlider_ValueChanged"/>
                             </Grid>
-
                             <!-- Margin Top -->
                             <Grid Margin="0,0,0,16">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <TextBlock Text="Margin Top" 
                                           FontSize="10" 
@@ -165,7 +152,6 @@
                                           Foreground="#999999"
                                           HorizontalAlignment="Right"/>
                                 </Grid>
-
                                 <Slider x:Name="MarginTopSlider"
                                    Grid.Row="1"
                                    Minimum="0" 
@@ -175,14 +161,12 @@
                                    IsSnapToTickEnabled="True"
                                    ValueChanged="MarginTopSlider_ValueChanged"/>
                             </Grid>
-
                             <!-- Margin Bottom -->
                             <Grid Margin="0,0,0,16">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <TextBlock Text="Margin Bottom" 
                                           FontSize="10" 
@@ -195,7 +179,6 @@
                                           Foreground="#999999"
                                           HorizontalAlignment="Right"/>
                                 </Grid>
-
                                 <Slider x:Name="MarginBottomSlider"
                                    Grid.Row="1"
                                    Minimum="0" 
@@ -205,14 +188,12 @@
                                    IsSnapToTickEnabled="True"
                                    ValueChanged="MarginBottomSlider_ValueChanged"/>
                             </Grid>
-
                             <!-- Margin Side -->
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <TextBlock Text="Margin Side" 
                                           FontSize="10" 
@@ -225,7 +206,6 @@
                                           Foreground="#999999"
                                           HorizontalAlignment="Right"/>
                                 </Grid>
-
                                 <Slider x:Name="MarginSideSlider"
                                    Grid.Row="1"
                                    Minimum="0" 
@@ -239,7 +219,6 @@
                     </StackPanel>
                 </Border>
                 <!-- Add this section to your SettingsWindow.xaml BEFORE the Shortcuts section -->
-
                 <!-- System Monitor Settings Section -->
                 <Border Grid.Row="4" BorderBrush="#E0E0E0" BorderThickness="1" Background="White" CornerRadius="3" Margin="0,0,0,10">
                     <Grid>
@@ -247,30 +226,25 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-
                         <!-- Header -->
                         <Grid Grid.Row="0" Background="#F8F8F8" Height="35" Cursor="Hand" MouseLeftButtonDown="SystemMonitorHeader_Click">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-
                             <TextBlock Grid.Column="0" Text="System Monitor" 
                       FontSize="12" FontWeight="Bold" 
                       VerticalAlignment="Center" 
                       Margin="10,0,0,0"
                       Foreground="#333333"/>
-
                             <TextBlock x:Name="SystemMonitorToggle" Grid.Column="1" Text="▼" 
                       FontSize="10" 
                       VerticalAlignment="Center" 
                       Margin="0,0,10,0"
                       Foreground="#666666"/>
                         </Grid>
-
                         <!-- Content -->
                         <StackPanel x:Name="SystemMonitorContent" Grid.Row="1" Margin="15" Visibility="Visible">
-
                             <!-- CPU Threshold -->
                             <Grid Margin="0,0,0,15">
                                 <Grid.ColumnDefinitions>
@@ -278,12 +252,10 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="50"/>
                                 </Grid.ColumnDefinitions>
-
                                 <TextBlock Grid.Column="0" Text="CPU Alert:" 
                           FontSize="11" 
                           VerticalAlignment="Center"
                           Foreground="#333333"/>
-
                                 <Slider x:Name="CpuThresholdSlider" Grid.Column="1" 
                        Minimum="50" Maximum="95" 
                        Value="85"
@@ -292,7 +264,6 @@
                        VerticalAlignment="Center"
                        Margin="10,0,10,0"
                        ValueChanged="CpuThresholdSlider_ValueChanged"/>
-
                                 <TextBlock x:Name="CpuThresholdValue" Grid.Column="2" 
                           Text="85%" 
                           FontSize="11" 
@@ -300,7 +271,6 @@
                           HorizontalAlignment="Center"
                           Foreground="#333333"/>
                             </Grid>
-
                             <!-- RAM Threshold -->
                             <Grid Margin="0,0,0,15">
                                 <Grid.ColumnDefinitions>
@@ -308,12 +278,10 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="50"/>
                                 </Grid.ColumnDefinitions>
-
                                 <TextBlock Grid.Column="0" Text="RAM Alert:" 
                           FontSize="11" 
                           VerticalAlignment="Center"
                           Foreground="#333333"/>
-
                                 <Slider x:Name="RamThresholdSlider" Grid.Column="1" 
                        Minimum="50" Maximum="95" 
                        Value="85"
@@ -322,7 +290,6 @@
                        VerticalAlignment="Center"
                        Margin="10,0,10,0"
                        ValueChanged="RamThresholdSlider_ValueChanged"/>
-
                                 <TextBlock x:Name="RamThresholdValue" Grid.Column="2" 
                           Text="85%" 
                           FontSize="11" 
@@ -330,7 +297,6 @@
                           HorizontalAlignment="Center"
                           Foreground="#333333"/>
                             </Grid>
-
                             <!-- Ping Threshold -->
                             <Grid Margin="0,0,0,15">
                                 <Grid.ColumnDefinitions>
@@ -338,12 +304,10 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="50"/>
                                 </Grid.ColumnDefinitions>
-
                                 <TextBlock Grid.Column="0" Text="Ping Alert:" 
                           FontSize="11" 
                           VerticalAlignment="Center"
                           Foreground="#333333"/>
-
                                 <Slider x:Name="PingThresholdSlider" Grid.Column="1" 
                        Minimum="25" Maximum="500" 
                        Value="100"
@@ -352,7 +316,6 @@
                        VerticalAlignment="Center"
                        Margin="10,0,10,0"
                        ValueChanged="PingThresholdSlider_ValueChanged"/>
-
                                 <TextBlock x:Name="PingThresholdValue" Grid.Column="2" 
                           Text="100ms" 
                           FontSize="11" 
@@ -360,19 +323,16 @@
                           HorizontalAlignment="Center"
                           Foreground="#333333"/>
                             </Grid>
-
                             <!-- Update Frequency -->
                             <Grid Margin="0,0,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-
                                 <TextBlock Grid.Column="0" Text="Update Freq:" 
                           FontSize="11" 
                           VerticalAlignment="Center"
                           Foreground="#333333"/>
-
                                 <ComboBox x:Name="UpdateFrequencyComboBox" Grid.Column="1" 
                          VerticalAlignment="Center"
                          Margin="10,0,0,0"
@@ -384,7 +344,6 @@
                                     <ComboBoxItem Content="10 seconds" Tag="10"/>
                                 </ComboBox>
                             </Grid>
-
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -415,10 +374,8 @@ Margin="0,0,0,20">
                                 </Grid>
                             </Border>
                         </Border>
-
                         <!-- Content (collapsible) -->
                         <StackPanel x:Name="ShortcutsContent" Margin="16">
-
                             <!-- Shortcuts List -->
                             <ScrollViewer x:Name="ShortcutsScrollViewer"
                   MaxHeight="300"
@@ -433,7 +390,6 @@ Margin="0,0,0,20">
                                     <!-- Individual shortcut cards will be added here dynamically -->
                                 </StackPanel>
                             </ScrollViewer>
-
                             <!-- Add New Shortcut Button -->
                             <Button x:Name="AddShortcutButton"
             Content="+ Add New Shortcut"
@@ -444,20 +400,87 @@ Margin="0,0,0,20">
             BorderThickness="0"
             Margin="0,0,0,8"
             Click="AddShortcutButton_Click"/>
-
                             <!-- Help Text -->
                             <TextBlock Text="Drag shortcuts to reorder them. Changes are saved automatically."
                FontSize="9"
                Foreground="#999999"
                TextWrapping="Wrap"
                HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <!-- Icon Management Section - Add this to SettingsWindow.xaml before the closing </StackPanel> -->
+                <Border Background="#F8F8F8" 
+        BorderBrush="#E0E0E0" 
+        BorderThickness="1" 
+        CornerRadius="3"
+        Margin="0,0,0,20">
+                    <StackPanel>
+                        <!-- Collapsible Header -->
+                        <Border Background="#EEEEEE" 
+                BorderBrush="#E0E0E0" 
+                BorderThickness="0,0,0,1"
+                Cursor="Hand"
+                MouseLeftButtonDown="IconManagementHeader_Click">
+                            <Border Padding="12,8">
+                                <Grid>
+                                    <TextBlock Text="Icon Management" 
+                               FontSize="12" 
+                               FontWeight="SemiBold"
+                               Foreground="#333333"/>
+                                    <TextBlock x:Name="IconManagementArrow"
+                               Text="▼" 
+                               FontSize="10"
+                               Foreground="#666666"
+                               HorizontalAlignment="Right"/>
+                                </Grid>
+                            </Border>
+                        </Border>
+
+                        <!-- Content (collapsible) -->
+                        <StackPanel x:Name="IconManagementContent" Margin="16">
+
+                            <TextBlock Text="Download additional Phosphor icons from the full catalog" 
+                       FontSize="10"
+                       Foreground="#666666"
+                       Margin="0,0,0,12"
+                       TextWrapping="Wrap"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock x:Name="IconStatsText" 
+                           Grid.Column="0"
+                           Text="50 default icons included"
+                           FontSize="10"
+                           Foreground="#333333"
+                           VerticalAlignment="Center"/>
+
+                                <Button x:Name="ManageIconsButton" 
+                        Grid.Column="1"
+                        Content="Manage Icons"
+                        Height="28"
+                        Width="100"
+                        FontSize="10"
+                        Background="#007BFF"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Click="ManageIconsButton_Click"/>
+                            </Grid>
+
+                            <TextBlock x:Name="IconStorageText"
+                       Text="Storage used: 0 KB"
+                       FontSize="9"
+                       Foreground="#999999"/>
 
                         </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
         </ScrollViewer>
-        
         <!-- Buttons -->
         <Border Grid.Row="2" 
                 Background="#F5F5F5" 
@@ -475,7 +498,7 @@ Margin="0,0,0,20">
                        HorizontalAlignment="Right"
                        VerticalAlignment="Center"
                        Margin="20,0">
-                <Button x:Name="CancelButton"
+                    <Button x:Name="CancelButton"
                        Content="Cancel"
                        Width="80" Height="32"
                        FontSize="10"
@@ -484,7 +507,7 @@ Margin="0,0,0,20">
                        BorderThickness="1"
                        Margin="0,0,10,0"
                        Click="CancelButton_Click"/>
-                <Button x:Name="ApplyButton"
+                    <Button x:Name="ApplyButton"
                        Content="Apply"
                        Width="80" Height="32"
                        FontSize="10"
@@ -492,7 +515,7 @@ Margin="0,0,0,20">
                        Foreground="White"
                        BorderThickness="0"
                        Click="ApplyButton_Click"/>
-            </StackPanel>
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

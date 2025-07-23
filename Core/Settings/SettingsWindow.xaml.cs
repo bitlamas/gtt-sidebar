@@ -648,6 +648,63 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
+        /// Handle icon management section collapse/expand
+        /// </summary>
+        private void IconManagementHeader_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (IconManagementContent.Visibility == Visibility.Visible)
+            {
+                IconManagementContent.Visibility = Visibility.Collapsed;
+                IconManagementArrow.Text = "▶";
+            }
+            else
+            {
+                IconManagementContent.Visibility = Visibility.Visible;
+                IconManagementArrow.Text = "▼";
+            }
+        }
+
+        /// <summary>
+        /// Handle manage icons button click
+        /// </summary>
+        private void ManageIconsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var iconManagerWindow = new IconManagerWindow
+                {
+                    Owner = this
+                };
+
+                iconManagerWindow.ShowDialog();
+                UpdateIconStats();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error opening icon manager: {ex.Message}");
+                MessageBox.Show("Error opening icon manager.", "Error",
+                               MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Update icon statistics display
+        /// </summary>
+        private void UpdateIconStats()
+        {
+            try
+            {
+                // For now, show placeholder until IconManager is fully implemented
+                IconStatsText.Text = "50 default icons included";
+                IconStorageText.Text = "Storage used: 0 KB";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating icon stats: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Helper to find icon border in a card
         /// </summary>
         private Border FindIconBorderInCard(Border card)
@@ -1254,6 +1311,7 @@ namespace gtt_sidebar.Core.Settings
             MarginSideValueText.Text = $"{_currentSettings.Window.MarginSide:F0} px";
 
             LoadSystemMonitorSettingsToUI();
+            UpdateIconStats();
         }
 
         private void LoadSystemMonitorSettingsToUI()

@@ -174,9 +174,12 @@ namespace gtt_sidebar.Core.Settings
                     
                     // Relative to executable
                     Path.Combine("Core", "Icons", "DefaultIcons", $"{iconName}.png"),
-                    
                     // Direct in executable directory
-                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DefaultIcons", $"{iconName}.png")
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "gtt-sidebar", "icons", $"{iconName}.png"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "gtt-sidebar", "icons", $"{iconName}.svg")
+
+                    
                 };
 
                 foreach (var path in possiblePaths)
