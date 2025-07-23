@@ -190,8 +190,58 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Core\Icons\DefaultIcons\" />
+    <Resource Include="Core\Icons\DefaultIcons\app-window.png" />
+    <Resource Include="Core\Icons\DefaultIcons\archive.png" />
+    <Resource Include="Core\Icons\DefaultIcons\bookmarks.png" />
+    <Resource Include="Core\Icons\DefaultIcons\brackets-curly.png" />
+    <Resource Include="Core\Icons\DefaultIcons\calculator.png" />
+    <Resource Include="Core\Icons\DefaultIcons\cell-signal-full.png" />
+    <Resource Include="Core\Icons\DefaultIcons\chart-line.png" />
+    <Resource Include="Core\Icons\DefaultIcons\chat-text.png" />
+    <Resource Include="Core\Icons\DefaultIcons\checkerboard.png" />
+    <Resource Include="Core\Icons\DefaultIcons\cloud.png" />
+    <Resource Include="Core\Icons\DefaultIcons\confetti.png" />
+    <Resource Include="Core\Icons\DefaultIcons\currency-btc.png" />
+    <Resource Include="Core\Icons\DefaultIcons\currency-dollar.png" />
+    <Resource Include="Core\Icons\DefaultIcons\database.png" />
+    <Resource Include="Core\Icons\DefaultIcons\desktop.png" />
+    <Resource Include="Core\Icons\DefaultIcons\dev-to-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\discord-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\envelope.png" />
+    <Resource Include="Core\Icons\DefaultIcons\export.png" />
+    <Resource Include="Core\Icons\DefaultIcons\file-arrow-up.png" />
+    <Resource Include="Core\Icons\DefaultIcons\folder-open.png" />
+    <Resource Include="Core\Icons\DefaultIcons\github-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\globe.png" />
+    <Resource Include="Core\Icons\DefaultIcons\hash.png" />
+    <Resource Include="Core\Icons\DefaultIcons\image.png" />
+    <Resource Include="Core\Icons\DefaultIcons\joystick.png" />
+    <Resource Include="Core\Icons\DefaultIcons\link-simple.png" />
+    <Resource Include="Core\Icons\DefaultIcons\messenger-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\microsoft-excel-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\microsoft-outlook-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\microsoft-teams-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\microsoft-word-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\money.png" />
+    <Resource Include="Core\Icons\DefaultIcons\note-pencil.png" />
+    <Resource Include="Core\Icons\DefaultIcons\open-ai-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\package.png" />
+    <Resource Include="Core\Icons\DefaultIcons\palette.png" />
+    <Resource Include="Core\Icons\DefaultIcons\planet.png" />
+    <Resource Include="Core\Icons\DefaultIcons\potted-plant.png" />
+    <Resource Include="Core\Icons\DefaultIcons\pulse.png" />
+    <Resource Include="Core\Icons\DefaultIcons\puzzle-piece.png" />
+    <Resource Include="Core\Icons\DefaultIcons\question.png" />
+    <Resource Include="Core\Icons\DefaultIcons\rocket-launch.png" />
+    <Resource Include="Core\Icons\DefaultIcons\slack-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\stack.png" />
+    <Resource Include="Core\Icons\DefaultIcons\steam-logo.png" />
+    <Resource Include="Core\Icons\DefaultIcons\terminal-window.png" />
+    <Resource Include="Core\Icons\DefaultIcons\traffic-cone.png" />
+    <Resource Include="Core\Icons\DefaultIcons\user.png" />
+    <Resource Include="Core\Icons\DefaultIcons\wrench.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

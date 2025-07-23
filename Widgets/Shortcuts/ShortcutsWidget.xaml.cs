@@ -60,6 +60,8 @@ namespace gtt_sidebar.Widgets.Shortcuts
             }
         }
 
+
+
         /// <summary>
         /// Calculate how many icons per row based on widget width
         /// </summary>
@@ -175,11 +177,9 @@ namespace gtt_sidebar.Widgets.Shortcuts
             }
         }
 
+
         /// <summary>
-        /// Create a clickable button for a shortcut
-        /// </summary>
-        /// <summary>
-        /// Create a clickable button for a shortcut
+        /// Create a clickable button for a shortcut - UPDATED WITH PNG SUPPORT
         /// </summary>
         private Button CreateShortcutButton(ShortcutItem shortcut)
         {
@@ -219,27 +219,59 @@ namespace gtt_sidebar.Widgets.Shortcuts
                         bitmap.CacheOption = BitmapCacheOption.OnLoad;
                         bitmap.EndInit();
                         image.Source = bitmap;
+                        button.Content = image;
                     }
                     catch (Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"Error loading custom icon: {ex.Message}");
                         // Fallback to default icon
                         button.Content = "📁";
+                        button.FontSize = ICON_SIZE - 4;
                     }
                 }
                 else
                 {
                     // Fallback if custom icon file is missing
                     button.Content = "📁";
+                    button.FontSize = ICON_SIZE - 4;
                 }
-
-                button.Content = image;
             }
             else
             {
-                // Show built-in emoji/text icon
-                button.Content = shortcut.IconValue;
-                button.FontSize = ICON_SIZE - 4;
+                // Try to load PNG for built-in icon
+                var iconPath = GetBuiltinIconPath(shortcut.IconValue);
+                if (!string.IsNullOrEmpty(iconPath))
+                {
+                    var image = new Image
+                    {
+                        Width = ICON_SIZE,
+                        Height = ICON_SIZE
+                    };
+
+                    try
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.UriSource = new Uri(iconPath);
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                        image.Source = bitmap;
+                        button.Content = image;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error loading builtin icon PNG {shortcut.IconValue}: {ex.Message}");
+                        // Fallback to text
+                        button.Content = shortcut.IconValue;
+                        button.FontSize = ICON_SIZE - 4;
+                    }
+                }
+                else
+                {
+                    // Fallback to text if PNG not found
+                    button.Content = shortcut.IconValue;
+                    button.FontSize = ICON_SIZE - 4;
+                }
             }
 
             // Apply custom style to remove hover effects
@@ -256,6 +288,57 @@ namespace gtt_sidebar.Widgets.Shortcuts
 
             return button;
         }
+
+        /// <summary>
+        /// Get path to built-in Phosphor icon PNG - copied from IconPicker
+        /// </summary>
+        private string GetBuiltinIconPath(string iconName)
+        {
+            try
+            {
+                // Method 1: Try embedded resource first
+                var resourcePath = $"pack://application:,,,/Core/Icons/DefaultIcons/{iconName}.png";
+                try
+                {
+                    var resourceStream = System.Windows.Application.GetResourceStream(new Uri(resourcePath));
+                    if (resourceStream != null)
+                    {
+                        resourceStream.Stream.Close();
+                        return resourcePath;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Not an embedded resource, try file system
+                }
+
+                // Method 2: Try file system locations
+                var possiblePaths = new[]
+                {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Core", "Icons", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "gtt-sidebar", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine("Core", "Icons", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DefaultIcons", $"{iconName}.png")
+                };
+
+                foreach (var path in possiblePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        return path;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting builtin icon path for {iconName}: {ex.Message}");
+                return null;
+            }
+        }
+
+        
 
         /// <summary>
         /// Handle shortcut button click - launch the application/URL

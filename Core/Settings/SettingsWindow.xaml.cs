@@ -128,6 +128,146 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
+        /// Create icon display for shortcut card - UPDATED WITH PNG SUPPORT
+        /// </summary>
+        private UIElement CreateIconDisplay(ShortcutItem shortcut)
+        {
+            if (shortcut.IconType == "custom")
+            {
+                // Show custom image
+                var image = new Image
+                {
+                    Width = 18,
+                    Height = 18,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsHitTestVisible = false
+                };
+
+                var iconPath = ShortcutsStorage.GetCustomIconPath(shortcut.IconValue);
+                if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+                {
+                    try
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.UriSource = new Uri(iconPath);
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                        image.Source = bitmap;
+                        return image;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error loading custom icon in settings: {ex.Message}");
+                    }
+                }
+
+                // Fallback for custom icons
+                return new TextBlock
+                {
+                    Text = "📁",
+                    FontSize = 18,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsHitTestVisible = false
+                };
+            }
+            else
+            {
+                // Try to load PNG for built-in icon
+                var iconPath = GetBuiltinIconPath(shortcut.IconValue);
+                if (!string.IsNullOrEmpty(iconPath))
+                {
+                    var image = new Image
+                    {
+                        Width = 18,
+                        Height = 18,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        IsHitTestVisible = false
+                    };
+
+                    try
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.UriSource = new Uri(iconPath);
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                        image.Source = bitmap;
+                        return image;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error loading builtin icon PNG in settings {shortcut.IconValue}: {ex.Message}");
+                    }
+                }
+
+                // Fallback to text
+                return new TextBlock
+                {
+                    Text = shortcut.IconValue,
+                    FontSize = 18,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsHitTestVisible = false,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(0)
+                };
+            }
+        }
+
+        /// <summary>
+        /// Get path to built-in Phosphor icon PNG - copied from IconPicker
+        /// </summary>
+        private string GetBuiltinIconPath(string iconName)
+        {
+            try
+            {
+                // Method 1: Try embedded resource first
+                var resourcePath = $"pack://application:,,,/Core/Icons/DefaultIcons/{iconName}.png";
+                try
+                {
+                    var resourceStream = System.Windows.Application.GetResourceStream(new Uri(resourcePath));
+                    if (resourceStream != null)
+                    {
+                        resourceStream.Stream.Close();
+                        return resourcePath;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Not an embedded resource, try file system
+                }
+
+                // Method 2: Try file system locations
+                var possiblePaths = new[]
+                {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Core", "Icons", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "gtt-sidebar", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine("Core", "Icons", "DefaultIcons", $"{iconName}.png"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DefaultIcons", $"{iconName}.png")
+                };
+
+                foreach (var path in possiblePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        return path;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting builtin icon path for {iconName}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Creates a UI card for a single shortcut
         /// </summary>
         private Border CreateShortcutCard(ShortcutItem shortcut)
@@ -212,6 +352,7 @@ namespace gtt_sidebar.Core.Settings
                 iconDisplay = iconText;
             }
 
+            iconDisplay = CreateIconDisplay(shortcut);
             iconBorder.Child = iconDisplay;
             iconBorder.PreviewMouseLeftButtonDown += IconBorder_Click; // Use Preview event
 
@@ -486,7 +627,9 @@ namespace gtt_sidebar.Core.Settings
                         }
 
                         // Replace the old content with new content
-                        iconBorder.Child = newIconDisplay;
+                        // Update the visual using the same logic as card creation
+                        var updatedIconDisplay = CreateIconDisplay(shortcut);
+                        iconBorder.Child = updatedIconDisplay;
                         System.Diagnostics.Debug.WriteLine($"Updated icon display to: {iconType} = {iconValue}");
                     }
 

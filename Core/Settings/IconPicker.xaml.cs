@@ -64,9 +64,9 @@ namespace gtt_sidebar.Core.Settings
                 ToolTip = iconName.Replace("-", " ") // Show friendly name
             };
 
-            // Try to load PNG icon from DefaultIcons folder
+            // Try to load PNG icon from embedded resources first, then file system
             var iconPath = GetIconPath(iconName);
-            if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+            if (!string.IsNullOrEmpty(iconPath))
             {
                 // Show PNG image
                 var image = new Image
@@ -82,7 +82,18 @@ namespace gtt_sidebar.Core.Settings
                 {
                     var bitmap = new BitmapImage();
                     bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(iconPath);
+
+                    if (iconPath.StartsWith("pack://"))
+                    {
+                        // Embedded resource
+                        bitmap.UriSource = new Uri(iconPath);
+                    }
+                    else
+                    {
+                        // File system
+                        bitmap.UriSource = new Uri(iconPath);
+                    }
+
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.EndInit();
                     image.Source = bitmap;
@@ -130,25 +141,54 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
-        /// Get the path to a Phosphor icon PNG file
+        /// Get the path to a Phosphor icon PNG file - FIXED VERSION
         /// </summary>
         private string GetIconPath(string iconName)
         {
             try
             {
-                // Try different possible locations
-                var locations = new[]
+                // Method 1: Try embedded resource first
+                var resourcePath = $"pack://application:,,,/Core/Icons/DefaultIcons/{iconName}.png";
+                try
                 {
+                    var resourceStream = System.Windows.Application.GetResourceStream(new Uri(resourcePath)); if (resourceStream != null)
+                    {
+                        resourceStream.Stream.Close();
+                        System.Diagnostics.Debug.WriteLine($"Found embedded resource: {iconName}");
+                        return resourcePath;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Not an embedded resource, try file system
+                }
+
+                // Method 2: Try file system locations
+                var possiblePaths = new[]
+                {
+                    // In project build output directory
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Core", "Icons", "DefaultIcons", $"{iconName}.png"),
+                    
+                    // In AppData (where other data is stored)
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "gtt-sidebar", "DefaultIcons", $"{iconName}.png"),
-                    Path.Combine("Core", "Icons", "DefaultIcons", $"{iconName}.png")
+                    
+                    // Relative to executable
+                    Path.Combine("Core", "Icons", "DefaultIcons", $"{iconName}.png"),
+                    
+                    // Direct in executable directory
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DefaultIcons", $"{iconName}.png")
                 };
 
-                foreach (var path in locations)
+                foreach (var path in possiblePaths)
                 {
                     if (File.Exists(path))
                     {
+                        System.Diagnostics.Debug.WriteLine($"Found file: {iconName} at {path}");
                         return path;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Not found at: {path}");
                     }
                 }
 
