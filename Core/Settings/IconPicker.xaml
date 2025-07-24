@@ -43,7 +43,7 @@
                      HorizontalScrollBarVisibility="Disabled"
                      Padding="8">
             <UniformGrid x:Name="IconsGrid" 
-                        Columns="6" 
+                        Columns="5" 
                         Margin="0">
                 <!-- Icons will be added programmatically -->
             </UniformGrid>

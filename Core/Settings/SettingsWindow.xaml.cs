@@ -50,7 +50,7 @@ namespace gtt_sidebar.Core.Settings
             {
                 _shortcutsData = ShortcutsStorage.LoadShortcuts();
                 LoadShortcutsToUI();
-                System.Diagnostics.Debug.WriteLine($"Loaded {_shortcutsData.Shortcuts.Count} shortcuts to settings");
+                //System.Diagnostics.Debug.WriteLine($"Loaded {_shortcutsData.Shortcuts.Count} shortcuts to settings");
             }
             catch (Exception ex)
             {
@@ -124,7 +124,7 @@ namespace gtt_sidebar.Core.Settings
                 _shortcutCards[shortcut.Id] = card;
             }
 
-            System.Diagnostics.Debug.WriteLine($"Created UI for {_shortcutCards.Count} shortcuts");
+            //System.Diagnostics.Debug.WriteLine($"Created UI for {_shortcutCards.Count} shortcuts");
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
-        /// Creates a UI card for a single shortcut
+        /// Creates a UI card for a single shortcut with up/down reordering buttons
         /// </summary>
         private Border CreateShortcutCard(ShortcutItem shortcut)
         {
@@ -280,7 +280,6 @@ namespace gtt_sidebar.Core.Settings
                 CornerRadius = new CornerRadius(2),
                 Margin = new Thickness(0, 0, 0, 8),
                 Padding = new Thickness(8),
-                Cursor = Cursors.SizeAll,
                 Tag = shortcut.Id
             };
 
@@ -289,11 +288,11 @@ namespace gtt_sidebar.Core.Settings
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Content
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Buttons
 
-            // Icon Preview (Clickable) - FIXED VERSION
+            // Icon Preview (Clickable)
             var iconBorder = new Border
             {
-                Width = 26,  // Increased from 24
-                Height = 26, // Increased from 24
+                Width = 26,
+                Height = 26,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(208, 208, 208)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(2),
@@ -303,58 +302,9 @@ namespace gtt_sidebar.Core.Settings
                 Background = new SolidColorBrush(Color.FromRgb(248, 248, 248))
             };
 
-            UIElement iconDisplay;
-
-            if (shortcut.IconType == "custom")
-            {
-                // Show custom image
-                var image = new Image
-                {
-                    Width = 18,
-                    Height = 18,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    IsHitTestVisible = false
-                };
-
-                // Load the custom icon
-                var iconPath = ShortcutsStorage.GetCustomIconPath(shortcut.IconValue);
-                if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
-                {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(iconPath);
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
-                    image.Source = bitmap;
-                }
-                else
-                {
-                    // Fallback: show a placeholder if custom icon is missing
-                    image.Source = null;
-                }
-
-                iconDisplay = image;
-            }
-            else
-            {
-                // Show built-in emoji/text icon
-                var iconText = new TextBlock
-                {
-                    Text = shortcut.IconValue,
-                    FontSize = 18,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    IsHitTestVisible = false,
-                    Padding = new Thickness(0),
-                    Margin = new Thickness(0)
-                };
-                iconDisplay = iconText;
-            }
-
-            iconDisplay = CreateIconDisplay(shortcut);
+            var iconDisplay = CreateIconDisplay(shortcut);
             iconBorder.Child = iconDisplay;
-            iconBorder.PreviewMouseLeftButtonDown += IconBorder_Click; // Use Preview event
+            iconBorder.PreviewMouseLeftButtonDown += IconBorder_Click;
 
             // Content Area
             var contentPanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -408,13 +358,45 @@ namespace gtt_sidebar.Core.Settings
             pathGrid.Children.Add(pathTextBox);
             contentPanel.Children.Add(pathGrid);
 
-            // Buttons
+            // Buttons Panel
             var buttonsPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(8, 0, 0, 0)
             };
+
+            // Up Button
+            var upButton = new Button
+            {
+                Content = "▲",
+                Width = 20,
+                Height = 20,
+                FontSize = 8,
+                Background = new SolidColorBrush(Color.FromRgb(108, 117, 125)),
+                Foreground = new SolidColorBrush(Colors.White),
+                BorderThickness = new Thickness(0),
+                Margin = new Thickness(0, 0, 2, 0),
+                ToolTip = "Move up",
+                Tag = shortcut.Id
+            };
+            upButton.Click += MoveUp_Click;
+
+            // Down Button
+            var downButton = new Button
+            {
+                Content = "▼",
+                Width = 20,
+                Height = 20,
+                FontSize = 8,
+                Background = new SolidColorBrush(Color.FromRgb(108, 117, 125)),
+                Foreground = new SolidColorBrush(Colors.White),
+                BorderThickness = new Thickness(0),
+                Margin = new Thickness(0, 0, 4, 0),
+                ToolTip = "Move down",
+                Tag = shortcut.Id
+            };
+            downButton.Click += MoveDown_Click;
 
             // Save Button
             var saveButton = new Button
@@ -449,6 +431,8 @@ namespace gtt_sidebar.Core.Settings
             };
             deleteButton.Click += DeleteShortcut_Click;
 
+            buttonsPanel.Children.Add(upButton);
+            buttonsPanel.Children.Add(downButton);
             buttonsPanel.Children.Add(saveButton);
             buttonsPanel.Children.Add(deleteButton);
 
@@ -462,14 +446,51 @@ namespace gtt_sidebar.Core.Settings
 
             card.Child = grid;
 
-            // Add drag and drop support
-            card.MouseLeftButtonDown += ShortcutCard_MouseLeftButtonDown;
-
             // Add hover effects for the icon border
             iconBorder.MouseEnter += (s, e) => iconBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(100, 149, 237));
             iconBorder.MouseLeave += (s, e) => iconBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(208, 208, 208));
 
             return card;
+        }
+
+        private void MoveUp_Click(object sender, RoutedEventArgs e)
+        {
+            var shortcutId = ((Button)sender).Tag.ToString();
+            var shortcut = _shortcutsData.Shortcuts.FirstOrDefault(s => s.Id == shortcutId);
+            var index = _shortcutsData.Shortcuts.IndexOf(shortcut);
+
+            if (index > 0)
+            {
+                _shortcutsData.Shortcuts.RemoveAt(index);
+                _shortcutsData.Shortcuts.Insert(index - 1, shortcut);
+                UpdateOrders();
+                ShortcutsStorage.SaveShortcuts(_shortcutsData);
+                LoadShortcutsToUI();
+                ShortcutsChanged?.Invoke();
+            }
+        }
+
+        private void MoveDown_Click(object sender, RoutedEventArgs e)
+        {
+            var shortcutId = ((Button)sender).Tag.ToString();
+            var shortcut = _shortcutsData.Shortcuts.FirstOrDefault(s => s.Id == shortcutId);
+            var index = _shortcutsData.Shortcuts.IndexOf(shortcut);
+
+            if (index < _shortcutsData.Shortcuts.Count - 1)
+            {
+                _shortcutsData.Shortcuts.RemoveAt(index);
+                _shortcutsData.Shortcuts.Insert(index + 1, shortcut);
+                UpdateOrders();
+                ShortcutsStorage.SaveShortcuts(_shortcutsData);
+                LoadShortcutsToUI();
+                ShortcutsChanged?.Invoke();
+            }
+        }
+
+        private void UpdateOrders()
+        {
+            for (int i = 0; i < _shortcutsData.Shortcuts.Count; i++)
+                _shortcutsData.Shortcuts[i].Order = i;
         }
 
         // Add these event handlers to SettingsWindow.xaml.cs
@@ -646,64 +667,6 @@ namespace gtt_sidebar.Core.Settings
                                MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
-
-        /// <summary>
-        /// Handle icon management section collapse/expand
-        /// </summary>
-        private void IconManagementHeader_Click(object sender, MouseButtonEventArgs e)
-        {
-            if (IconManagementContent.Visibility == Visibility.Visible)
-            {
-                IconManagementContent.Visibility = Visibility.Collapsed;
-                IconManagementArrow.Text = "▶";
-            }
-            else
-            {
-                IconManagementContent.Visibility = Visibility.Visible;
-                IconManagementArrow.Text = "▼";
-            }
-        }
-
-        /// <summary>
-        /// Handle manage icons button click
-        /// </summary>
-        private void ManageIconsButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var iconManagerWindow = new IconManagerWindow
-                {
-                    Owner = this
-                };
-
-                iconManagerWindow.ShowDialog();
-                UpdateIconStats();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error opening icon manager: {ex.Message}");
-                MessageBox.Show("Error opening icon manager.", "Error",
-                               MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        /// <summary>
-        /// Update icon statistics display
-        /// </summary>
-        private void UpdateIconStats()
-        {
-            try
-            {
-                // For now, show placeholder until IconManager is fully implemented
-                IconStatsText.Text = "50 default icons included";
-                IconStorageText.Text = "Storage used: 0 KB";
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error updating icon stats: {ex.Message}");
-            }
-        }
-
         /// <summary>
         /// Helper to find icon border in a card
         /// </summary>
@@ -919,305 +882,10 @@ namespace gtt_sidebar.Core.Settings
             return null;
         }
 
-        /// <summary>
-        /// Handle mouse down to start drag operation
-        /// </summary>
-        private void ShortcutCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            var card = sender as Border;
-            if (card == null) return;
+  
+        
+        
 
-            // Store the start point and card
-            _dragStartPoint = e.GetPosition(card);
-            _draggedCard = card;
-            _draggedIndex = ShortcutsContainer.Children.IndexOf(card);
-
-            // Capture mouse to handle drag even if mouse leaves the card
-            card.CaptureMouse();
-
-            // Add mouse move and up handlers
-            card.MouseMove += ShortcutCard_MouseMove;
-            card.MouseLeftButtonUp += ShortcutCard_MouseLeftButtonUp;
-
-            System.Diagnostics.Debug.WriteLine($"Drag start: Card {_draggedIndex}");
-        }
-        /// <summary>
-        /// Handle mouse up to end drag
-        /// </summary>
-        private void ShortcutCard_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            var card = sender as Border;
-            if (card == null) return;
-
-            // Clean up drag state
-            card.ReleaseMouseCapture();
-            card.MouseMove -= ShortcutCard_MouseMove;
-            card.MouseLeftButtonUp -= ShortcutCard_MouseLeftButtonUp;
-
-            // Reset visual feedback
-            if (_draggedCard != null)
-            {
-                _draggedCard.Opacity = 1.0;
-                _draggedCard = null;
-            }
-
-            _draggedIndex = -1;
-            _dropIndex = -1;
-
-            System.Diagnostics.Debug.WriteLine("Drag ended");
-        }
-        /// <summary>
-        /// Handle mouse move during drag
-        /// </summary>
-        private void ShortcutCard_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (_draggedCard == null || e.LeftButton != MouseButtonState.Pressed) return;
-
-            var card = sender as Border;
-            if (card != _draggedCard) return;
-
-            // Check if we've moved far enough to start a drag operation
-            var currentPosition = e.GetPosition(card);
-            var diff = _dragStartPoint - currentPosition;
-
-            if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
-                Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
-            {
-                // Start the drag operation
-                StartDragDrop();
-            }
-        }
-        /// <summary>
-        /// Start the actual drag and drop operation
-        /// </summary>
-        private void StartDragDrop()
-        {
-            if (_draggedCard?.Tag == null) return;
-
-            try
-            {
-                // Visual feedback - make the card semi-transparent
-                _draggedCard.Opacity = 0.5;
-
-                // Create data object with the shortcut ID
-                var dragData = new DataObject("ShortcutCard", _draggedCard.Tag.ToString());
-
-                // Start drag operation
-                var result = DragDrop.DoDragDrop(_draggedCard, dragData, DragDropEffects.Move);
-
-                System.Diagnostics.Debug.WriteLine($"Drag operation result: {result}");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error during drag operation: {ex.Message}");
-            }
-            finally
-            {
-                // Restore visual state
-                if (_draggedCard != null)
-                {
-                    _draggedCard.Opacity = 1.0;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Handle the actual drop operation
-        /// </summary>
-        private void ShortcutsContainer_Drop(object sender, DragEventArgs e)
-        {
-            try
-            {
-                if (!e.Data.GetDataPresent("ShortcutCard"))
-                {
-                    e.Effects = DragDropEffects.None;
-                    return;
-                }
-
-                var draggedShortcutId = e.Data.GetData("ShortcutCard") as string;
-                if (string.IsNullOrEmpty(draggedShortcutId))
-                {
-                    System.Diagnostics.Debug.WriteLine("Drop: No shortcut ID found");
-                    return;
-                }
-
-                // Find the drop position
-                var dropPosition = e.GetPosition(ShortcutsContainer);
-                var newIndex = GetDropTarget(dropPosition);
-
-                if (newIndex == -1 || newIndex == _draggedIndex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Drop: Invalid position or same position ({newIndex})");
-                    return;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Drop: Moving shortcut from {_draggedIndex} to {newIndex}");
-
-                // Perform the reorder
-                ReorderShortcut(_draggedIndex, newIndex);
-
-                e.Effects = DragDropEffects.Move;
-                e.Handled = true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error during drop: {ex.Message}");
-                e.Effects = DragDropEffects.None;
-            }
-        }
-        /// <summary>
-        /// Perform the actual reordering of shortcuts (FIXED VERSION)
-        /// </summary>
-        private void ReorderShortcut(int fromIndex, int toIndex)
-        {
-            try
-            {
-                if (fromIndex < 0 || fromIndex >= _shortcutsData.Shortcuts.Count ||
-                    toIndex < 0 || toIndex > _shortcutsData.Shortcuts.Count)
-                {
-                    System.Diagnostics.Debug.WriteLine($"ReorderShortcut: Invalid indices ({fromIndex} -> {toIndex})");
-                    return;
-                }
-
-                // If we're dropping at the end, adjust to last valid position
-                if (toIndex >= _shortcutsData.Shortcuts.Count)
-                {
-                    toIndex = _shortcutsData.Shortcuts.Count - 1;
-                }
-
-                // If trying to move to the same position, do nothing
-                if (fromIndex == toIndex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"ReorderShortcut: Same position ({fromIndex}), no change needed");
-                    return;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"ReorderShortcut: Moving from {fromIndex} to {toIndex} (before adjustment)");
-
-                // Get the shortcut to move
-                var shortcut = _shortcutsData.Shortcuts[fromIndex];
-
-                // Remove from current position
-                _shortcutsData.Shortcuts.RemoveAt(fromIndex);
-
-                // Adjust target index if we removed an item before the target
-                var insertIndex = toIndex;
-                if (fromIndex < toIndex)
-                {
-                    insertIndex = toIndex - 1; // Shift down because we removed an item before the target
-                }
-
-                // Ensure insert index is valid
-                insertIndex = Math.Max(0, Math.Min(insertIndex, _shortcutsData.Shortcuts.Count));
-
-                // Insert at new position
-                _shortcutsData.Shortcuts.Insert(insertIndex, shortcut);
-
-                System.Diagnostics.Debug.WriteLine($"ReorderShortcut: Actually moved from {fromIndex} to {insertIndex}");
-
-                // Update order values for all shortcuts
-                for (int i = 0; i < _shortcutsData.Shortcuts.Count; i++)
-                {
-                    _shortcutsData.Shortcuts[i].Order = i;
-                    System.Diagnostics.Debug.WriteLine($"  Updated order: [{i}] {_shortcutsData.Shortcuts[i].Label}");
-                }
-
-                // Save to storage
-                ShortcutsStorage.SaveShortcuts(_shortcutsData);
-
-                // Refresh the UI
-                LoadShortcutsToUI();
-
-                System.Diagnostics.Debug.WriteLine($"Successfully reordered shortcut '{shortcut.Label}' from position {fromIndex} to {insertIndex}");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error reordering shortcut: {ex.Message}");
-
-                // On error, reload from storage to ensure consistency
-                LoadShortcutsData();
-            }
-        }
-        /// <summary>
-        /// Calculate the drop target index based on mouse position (IMPROVED VERSION)
-        /// </summary>
-        private int GetDropTarget(Point position)
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"GetDropTarget: Mouse at Y={position.Y:F1}");
-
-                for (int i = 0; i < ShortcutsContainer.Children.Count; i++)
-                {
-                    var child = ShortcutsContainer.Children[i] as FrameworkElement;
-                    if (child == null) continue;
-
-                    var childTop = child.TranslatePoint(new Point(0, 0), ShortcutsContainer).Y;
-                    var childBottom = childTop + child.ActualHeight;
-                    var childMiddle = childTop + (child.ActualHeight / 2);
-
-                    System.Diagnostics.Debug.WriteLine($"  Card {i}: Top={childTop:F1}, Middle={childMiddle:F1}, Bottom={childBottom:F1}");
-
-                    // If mouse is above the middle of this card, insert before it
-                    if (position.Y < childMiddle)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"  -> Insert before card {i}");
-                        return i;
-                    }
-
-                    // If this is the last card and mouse is below middle, insert after it
-                    if (i == ShortcutsContainer.Children.Count - 1 && position.Y >= childMiddle)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"  -> Insert after last card (position {i + 1})");
-                        return i + 1;
-                    }
-                }
-
-                // Default: insert at the end
-                System.Diagnostics.Debug.WriteLine($"  -> Default: Insert at end (position {ShortcutsContainer.Children.Count})");
-                return ShortcutsContainer.Children.Count;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error calculating drop target: {ex.Message}");
-                return -1;
-            }
-        }
-
-        /// <summary>
-        /// Handle drag over to provide visual feedback
-        /// </summary>
-        private void ShortcutsContainer_DragOver(object sender, DragEventArgs e)
-        {
-            try
-            {
-                // Check if this is a valid shortcut card being dragged
-                if (e.Data.GetDataPresent("ShortcutCard"))
-                {
-                    e.Effects = DragDropEffects.Move;
-
-                    // Get the position where we're hovering
-                    var dropTarget = GetDropTarget(e.GetPosition(ShortcutsContainer));
-
-                    if (dropTarget != -1 && dropTarget != _draggedIndex)
-                    {
-                        // Show visual feedback (optional - could highlight drop zone)
-                        _dropIndex = dropTarget;
-                    }
-                }
-                else
-                {
-                    e.Effects = DragDropEffects.None;
-                }
-
-                e.Handled = true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error during drag over: {ex.Message}");
-                e.Effects = DragDropEffects.None;
-            }
-        }
 
         private SettingsData CloneSettings(SettingsData settings)
         {
@@ -1311,7 +979,6 @@ namespace gtt_sidebar.Core.Settings
             MarginSideValueText.Text = $"{_currentSettings.Window.MarginSide:F0} px";
 
             LoadSystemMonitorSettingsToUI();
-            UpdateIconStats();
         }
 
         private void LoadSystemMonitorSettingsToUI()

@@ -75,18 +75,18 @@ namespace gtt_sidebar.Core.Managers
         /// </summary>
         public async Task InitializeWidgetsAsync()
         {
-            foreach (var widget in _loadedWidgets)
+            var localWidgets = _loadedWidgets.Where(w => w.Name == "Clock" || w.Name == "Notes" || w.Name == "Shortcuts").ToList();
+            var apiWidgets = _loadedWidgets.Where(w => w.Name == "Weather" || w.Name == "Stocks" || w.Name == "System Monitor").ToList();
+
+            // Initialize local widgets first
+            foreach (var widget in localWidgets)
             {
-                try
-                {
-                    await widget.InitializeAsync();
-                    System.Diagnostics.Debug.WriteLine($"Initialized widget: {widget.Name}");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to initialize widget {widget.Name}: {ex.Message}");
-                }
+                await widget.InitializeAsync();
             }
+
+            // Initialize API widgets in parallel
+            var apiTasks = apiWidgets.Select(widget => widget.InitializeAsync()).ToArray();
+            await Task.WhenAll(apiTasks);
         }
 
         /// <summary>

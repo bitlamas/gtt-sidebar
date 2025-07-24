@@ -222,77 +222,42 @@ namespace gtt_sidebar.Core.Settings
             }
         }
 
-        /// <summary>
-        /// Handle custom icon button click
-        /// </summary>
         private void CustomIconButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("CustomIconButton_Click: Starting file dialog...");
-
-                // Hide this window temporarily to prevent dialog issues
                 this.Hide();
 
-                OpenFileDialog openFileDialog = null;
-                bool? result = false;
-                string selectedFile = null;
-
-                openFileDialog = new OpenFileDialog
+                var openFileDialog = new OpenFileDialog
                 {
                     Title = "Select Custom Icon",
                     Filter = "PNG Files (*.png)|*.png|All Image Files (*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.ico)|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.ico",
-                    FilterIndex = 1,
-                    CheckFileExists = true,
-                    CheckPathExists = true,
-                    Multiselect = false
+                    FilterIndex = 1
                 };
 
-                result = openFileDialog.ShowDialog();
-                selectedFile = openFileDialog.FileName;
+                var result = openFileDialog.ShowDialog();
 
-                if (result == true && !string.IsNullOrWhiteSpace(selectedFile))
+                if (result == true && !string.IsNullOrWhiteSpace(openFileDialog.FileName))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Selected custom icon file: {selectedFile}");
-
-                    // Generate a unique ID for this icon
                     var iconId = Guid.NewGuid().ToString();
-
-                    // Process and save the custom icon
-                    var savedFileName = ProcessCustomIcon(selectedFile, iconId);
+                    var savedFileName = ProcessCustomIcon(openFileDialog.FileName, iconId);
 
                     if (!string.IsNullOrEmpty(savedFileName))
                     {
                         IconSelected?.Invoke("custom", savedFileName);
                         _isClosing = true;
                         this.Close();
-                    }
-                    else
-                    {
-                        // Show this window again and display error
-                        this.Show();
-                        MessageBox.Show("Failed to process the selected image file.", "Error",
-                                       MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
                     }
                 }
-                else
-                {
-                    // User cancelled or no file selected - show window again
-                    this.Show();
-                }
+
+                // User cancelled or error - just show window again
+                this.Show();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error in CustomIconButton_Click: {ex.Message}");
-
-                // Make sure window is visible again
-                if (!this.IsVisible && !_isClosing)
-                {
-                    this.Show();
-                }
-
-                MessageBox.Show($"Error selecting custom icon: {ex.Message}", "Error",
-                               MessageBoxButton.OK, MessageBoxImage.Error);
+                if (!_isClosing) this.Show();
             }
         }
 

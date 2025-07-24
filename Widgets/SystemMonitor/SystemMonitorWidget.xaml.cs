@@ -83,7 +83,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
             _updateTimer.Interval = TimeSpan.FromSeconds(_settings.UpdateFrequencySeconds); // Changed from hardcoded 2
             _updateTimer.Tick += UpdateTimer_Tick;
 
-            UpdateDisplay();
+            
             _updateTimer.Start();
 
             await Task.CompletedTask;
@@ -143,7 +143,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                 if (_cpuCounter != null)
                 {
                     _currentCpu = _cpuCounter.NextValue();
-                    System.Diagnostics.Debug.WriteLine($"SystemMonitor: CPU usage: {_currentCpu:F1}%");
+                    //System.Diagnostics.Debug.WriteLine($"SystemMonitor: CPU usage: {_currentCpu:F1}%");
                 }
                 else
                 {
@@ -168,7 +168,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     var usedRamGB = _totalRamGB - availableRamGB;
                     _currentRam = (usedRamGB / _totalRamGB) * 100.0;
 
-                    System.Diagnostics.Debug.WriteLine($"SystemMonitor: RAM usage: {_currentRam:F1}% ({usedRamGB:F1}GB used of {_totalRamGB:F1}GB)");
+                    //System.Diagnostics.Debug.WriteLine($"SystemMonitor: RAM usage: {_currentRam:F1}% ({usedRamGB:F1}GB used of {_totalRamGB:F1}GB)");
                 }
                 else
                 {
@@ -193,7 +193,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     if (reply.Status == IPStatus.Success)
                     {
                         _currentPing = reply.RoundtripTime;
-                        System.Diagnostics.Debug.WriteLine($"SystemMonitor: Ping to 8.8.8.8: {_currentPing}ms");
+                        //System.Diagnostics.Debug.WriteLine($"SystemMonitor: Ping to 8.8.8.8: {_currentPing}ms");
                     }
                     else
                     {

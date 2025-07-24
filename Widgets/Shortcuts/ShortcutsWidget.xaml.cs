@@ -80,7 +80,7 @@ namespace gtt_sidebar.Widgets.Shortcuts
 
                 // Calculate how many shortcuts we can display in 120px height
                 // Header takes ~20px, leaving ~90px for icons
-                var availableHeight = 90.0;
+                var availableHeight = 120.0;
                 var iconWithVerticalSpacing = ICON_SIZE + spacingPerIcon;
                 var maxRows = Math.Max(1, (int)Math.Floor(availableHeight / iconWithVerticalSpacing));
 

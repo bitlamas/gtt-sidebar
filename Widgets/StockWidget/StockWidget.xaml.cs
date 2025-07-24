@@ -298,7 +298,7 @@ namespace gtt_sidebar.Widgets.StockWidget
                 JToken pairData = null;
                 foreach (var property in result.Children<JProperty>())
                 {
-                    System.Diagnostics.Debug.WriteLine($"Found pair: {property.Name}");
+                    //System.Diagnostics.Debug.WriteLine($"Found pair: {property.Name}");
                     pairData = property.Value;
                     break; // Take the first (and usually only) pair
                 }
@@ -308,7 +308,7 @@ namespace gtt_sidebar.Widgets.StockWidget
                     throw new Exception("No pair data found in Kraken API response");
                 }
 
-                System.Diagnostics.Debug.WriteLine($"Pair data structure: {pairData}");
+                //System.Diagnostics.Debug.WriteLine($"Pair data structure: {pairData}");
                 var currentPrice = (double)pairData["c"][0];
                 var previousClosePrice = (double)pairData["o"]; // Opening price is a simple value, not an array
 
