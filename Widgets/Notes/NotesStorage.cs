@@ -1,12 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace gtt_sidebar.Widgets.Notes
 {
     /// <summary>
-    /// Handles loading and saving notes data to JSON file
+    /// Handles loading and saving notes data to JSON file with async operations
     /// </summary>
     public static class NotesStorage
     {
@@ -18,39 +19,39 @@ namespace gtt_sidebar.Widgets.Notes
         private const string DEFAULT_CONTENT = "Hi. This is your notepad.";
 
         /// <summary>
-        /// Loads notes data from file, creates default if file doesn't exist
+        /// Async version - loads notes data from file, creates default if file doesn't exist
         /// </summary>
-        public static NotesData LoadNotes()
+        public static async Task<NotesData> LoadNotesAsync()
         {
             try
             {
-                // Ensure directory exists
+                // ensure directory exists
                 Directory.CreateDirectory(_appDataPath);
 
                 if (!File.Exists(_notesFilePath))
                 {
                     System.Diagnostics.Debug.WriteLine("Notes file doesn't exist, creating default");
                     var newData = CreateDefaultNotesData();
-                    SaveNotes(newData); // Save immediately
+                    await SaveNotesAsync(newData);
                     return newData;
                 }
 
-                var json = File.ReadAllText(_notesFilePath);
+                var json = await File.ReadAllTextAsync(_notesFilePath);
                 var notesData = JsonConvert.DeserializeObject<NotesData>(json);
 
-                // Validate data integrity
+                // validate data integrity
                 if (notesData == null || notesData.Tabs == null)
                 {
                     System.Diagnostics.Debug.WriteLine("Invalid notes data, creating default");
                     var newData = CreateDefaultNotesData();
-                    SaveNotes(newData);
+                    await SaveNotesAsync(newData);
                     return newData;
                 }
 
-                // Clean up and validate existing data
+                // clean up and validate existing data
                 CleanupNotesData(notesData);
 
-                // Ensure we always have exactly one default tab
+                // ensure we always have exactly one default tab
                 notesData.EnsureDefaultTab(DEFAULT_CONTENT);
 
                 System.Diagnostics.Debug.WriteLine($"Loaded {notesData.Tabs.Count} notes tabs");
@@ -60,9 +61,55 @@ namespace gtt_sidebar.Widgets.Notes
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading notes: {ex.Message}");
                 var newData = CreateDefaultNotesData();
-                SaveNotes(newData);
+                await SaveNotesAsync(newData);
                 return newData;
             }
+        }
+
+        /// <summary>
+        /// Synchronous version for backward compatibility
+        /// </summary>
+        public static NotesData LoadNotes()
+        {
+            return Task.Run(async () => await LoadNotesAsync()).Result;
+        }
+
+        /// <summary>
+        /// Async version - saves notes data to file
+        /// </summary>
+        public static async Task<bool> SaveNotesAsync(NotesData notesData)
+        {
+            try
+            {
+                // ensure directory exists
+                Directory.CreateDirectory(_appDataPath);
+
+                // validate data before saving
+                if (notesData?.Tabs == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Cannot save null notes data");
+                    return false;
+                }
+
+                var json = JsonConvert.SerializeObject(notesData, Formatting.Indented);
+                await File.WriteAllTextAsync(_notesFilePath, json);
+
+                System.Diagnostics.Debug.WriteLine($"Saved {notesData.Tabs.Count} notes tabs");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving notes: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Synchronous version for backward compatibility
+        /// </summary>
+        public static bool SaveNotes(NotesData notesData)
+        {
+            return Task.Run(async () => await SaveNotesAsync(notesData)).Result;
         }
 
         /// <summary>
@@ -73,7 +120,7 @@ namespace gtt_sidebar.Widgets.Notes
             var notesData = new NotesData();
             notesData.EnsureDefaultTab(DEFAULT_CONTENT);
 
-            // Debug: Verify the default data is correct
+            // debug: verify the default data is correct
             System.Diagnostics.Debug.WriteLine($"CreateDefaultNotesData: Created {notesData.Tabs.Count} tabs");
             var defaultTab = notesData.Tabs.FirstOrDefault(t => t.IsDefault);
             if (defaultTab != null)
@@ -95,7 +142,7 @@ namespace gtt_sidebar.Widgets.Notes
                 return;
             }
 
-            // Remove any tabs with invalid IDs
+            // remove any tabs with invalid IDs
             var invalidTabs = notesData.Tabs.Where(t => string.IsNullOrEmpty(t.Id)).ToList();
             foreach (var invalid in invalidTabs)
             {
@@ -103,11 +150,11 @@ namespace gtt_sidebar.Widgets.Notes
                 System.Diagnostics.Debug.WriteLine("Removed invalid tab without ID");
             }
 
-            // Fix tabs with duplicate IDs
+            // fix tabs with duplicate IDs
             var duplicateGroups = notesData.Tabs.GroupBy(t => t.Id).Where(g => g.Count() > 1);
             foreach (var group in duplicateGroups)
             {
-                var duplicates = group.Skip(1).ToList(); // Keep first, remove rest
+                var duplicates = group.Skip(1).ToList(); // keep first, remove rest
                 foreach (var duplicate in duplicates)
                 {
                     notesData.Tabs.Remove(duplicate);
@@ -115,54 +162,24 @@ namespace gtt_sidebar.Widgets.Notes
                 }
             }
 
-            // Remove sample markdown content if it exists
+            // remove sample markdown content if it exists
             foreach (var tab in notesData.Tabs)
             {
                 if (tab.Content != null &&
                     (tab.Content.Contains("# Main Header") ||
                      tab.Content.Contains("## Markdown Formatting Help") ||
                      tab.Content.Contains("Try editing this text to see") ||
-                     tab.Content.Contains("Markdown accepted"))) // Remove old markdown reference
+                     tab.Content.Contains("Markdown accepted"))) // remove old markdown reference
                 {
                     tab.Content = tab.IsDefault ? DEFAULT_CONTENT : "";
                     System.Diagnostics.Debug.WriteLine("Cleared sample content from tab");
                 }
             }
 
-            // Ensure valid active tab index
+            // ensure valid active tab index
             if (notesData.LastActiveTabIndex < 0 || notesData.LastActiveTabIndex >= notesData.Tabs.Count)
             {
                 notesData.LastActiveTabIndex = 0;
-            }
-        }
-
-        /// <summary>
-        /// Saves notes data to file
-        /// </summary>
-        public static bool SaveNotes(NotesData notesData)
-        {
-            try
-            {
-                // Ensure directory exists
-                Directory.CreateDirectory(_appDataPath);
-
-                // Validate data before saving
-                if (notesData?.Tabs == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("Cannot save null notes data");
-                    return false;
-                }
-
-                var json = JsonConvert.SerializeObject(notesData, Formatting.Indented);
-                File.WriteAllText(_notesFilePath, json);
-
-                System.Diagnostics.Debug.WriteLine($"Saved {notesData.Tabs.Count} notes tabs");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving notes: {ex.Message}");
-                return false;
             }
         }
 
@@ -177,7 +194,7 @@ namespace gtt_sidebar.Widgets.Notes
         /// <summary>
         /// Backs up the current notes file
         /// </summary>
-        public static bool BackupNotes()
+        public static async Task<bool> BackupNotesAsync()
         {
             try
             {
@@ -185,7 +202,11 @@ namespace gtt_sidebar.Widgets.Notes
                     return false;
 
                 var backupPath = Path.Combine(_appDataPath, $"notes_backup_{DateTime.Now:yyyyMMdd_HHmmss}.json");
-                File.Copy(_notesFilePath, backupPath);
+                using (var sourceStream = new FileStream(_notesFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+                using (var destinationStream = new FileStream(backupPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    await sourceStream.CopyToAsync(destinationStream);
+                }
 
                 System.Diagnostics.Debug.WriteLine($"Notes backed up to: {backupPath}");
                 return true;
@@ -200,18 +221,18 @@ namespace gtt_sidebar.Widgets.Notes
         /// <summary>
         /// Resets notes to default state (for debugging)
         /// </summary>
-        public static bool ResetToDefault()
+        public static async Task<bool> ResetToDefaultAsync()
         {
             try
             {
                 if (File.Exists(_notesFilePath))
                 {
-                    BackupNotes(); // Backup first
+                    await BackupNotesAsync(); // backup first
                     File.Delete(_notesFilePath);
                 }
 
                 var defaultData = CreateDefaultNotesData();
-                return SaveNotes(defaultData);
+                return await SaveNotesAsync(defaultData);
             }
             catch (Exception ex)
             {

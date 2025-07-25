@@ -1,11 +1,12 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace gtt_sidebar.Core.Settings
 {
     /// <summary>
-    /// Handles loading and saving settings data to JSON file
+    /// Handles loading and saving settings data to JSON file with async operations
     /// </summary>
     public static class SettingsStorage
     {
@@ -16,36 +17,36 @@ namespace gtt_sidebar.Core.Settings
         private static readonly string _settingsFilePath = Path.Combine(_appDataPath, "settings.json");
 
         /// <summary>
-        /// Loads settings data from file, creates default if file doesn't exist
+        /// Async version - loads settings data from file, creates default if file doesn't exist
         /// </summary>
-        public static SettingsData LoadSettings()
+        public static async Task<SettingsData> LoadSettingsAsync()
         {
             try
             {
-                // Ensure directory exists
+                // ensure directory exists
                 Directory.CreateDirectory(_appDataPath);
 
                 if (!File.Exists(_settingsFilePath))
                 {
                     System.Diagnostics.Debug.WriteLine("Settings file doesn't exist, creating default");
                     var newSettings = CreateDefaultSettings();
-                    SaveSettings(newSettings); // Save immediately
+                    await SaveSettingsAsync(newSettings);
                     return newSettings;
                 }
 
-                var json = File.ReadAllText(_settingsFilePath);
+                var json = await File.ReadAllTextAsync(_settingsFilePath);
                 var settings = JsonConvert.DeserializeObject<SettingsData>(json);
 
-                // Validate data integrity
+                // validate data integrity
                 if (settings == null)
                 {
                     System.Diagnostics.Debug.WriteLine("Invalid settings data, creating default");
                     var newSettings = CreateDefaultSettings();
-                    SaveSettings(newSettings);
+                    await SaveSettingsAsync(newSettings);
                     return newSettings;
                 }
 
-                // Validate and fix any out-of-range values
+                // validate and fix any out-of-range values
                 if (settings.Window == null)
                 {
                     settings.Window = new WindowSettings();
@@ -53,7 +54,7 @@ namespace gtt_sidebar.Core.Settings
 
                 settings.Window.Validate();
 
-                // Check if settings would cause window to be off-screen
+                // check if settings would cause window to be off-screen
                 if (!settings.Window.FitsOnScreen())
                 {
                     System.Diagnostics.Debug.WriteLine("Settings would place window off-screen, using defaults");
@@ -67,9 +68,60 @@ namespace gtt_sidebar.Core.Settings
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
                 var newSettings = CreateDefaultSettings();
-                SaveSettings(newSettings);
+                await SaveSettingsAsync(newSettings);
                 return newSettings;
             }
+        }
+
+        /// <summary>
+        /// Synchronous version for backward compatibility
+        /// </summary>
+        public static SettingsData LoadSettings()
+        {
+            // run async version synchronously for compatibility
+            return Task.Run(async () => await LoadSettingsAsync()).Result;
+        }
+
+        /// <summary>
+        /// Async version - saves settings data to file
+        /// </summary>
+        public static async Task<bool> SaveSettingsAsync(SettingsData settings)
+        {
+            try
+            {
+                // ensure directory exists
+                Directory.CreateDirectory(_appDataPath);
+
+                // validate data before saving
+                if (settings?.Window == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Cannot save null settings data");
+                    return false;
+                }
+
+                // validate settings before saving
+                settings.Window.Validate();
+
+                var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
+                await File.WriteAllTextAsync(_settingsFilePath, json);
+
+                System.Diagnostics.Debug.WriteLine("Settings saved successfully");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving settings: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Synchronous version for backward compatibility
+        /// </summary>
+        public static bool SaveSettings(SettingsData settings)
+        {
+            // run async version synchronously for compatibility
+            return Task.Run(async () => await SaveSettingsAsync(settings)).Result;
         }
 
         /// <summary>
@@ -94,39 +146,6 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
-        /// Saves settings data to file
-        /// </summary>
-        public static bool SaveSettings(SettingsData settings)
-        {
-            try
-            {
-                // Ensure directory exists
-                Directory.CreateDirectory(_appDataPath);
-
-                // Validate data before saving
-                if (settings?.Window == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("Cannot save null settings data");
-                    return false;
-                }
-
-                // Validate settings before saving
-                settings.Window.Validate();
-
-                var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
-                File.WriteAllText(_settingsFilePath, json);
-
-                System.Diagnostics.Debug.WriteLine("Settings saved successfully");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving settings: {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
         /// Gets the path where settings are stored (for debugging)
         /// </summary>
         public static string GetSettingsFilePath()
@@ -137,7 +156,7 @@ namespace gtt_sidebar.Core.Settings
         /// <summary>
         /// Backs up the current settings file
         /// </summary>
-        public static bool BackupSettings()
+        public static async Task<bool> BackupSettingsAsync()
         {
             try
             {
@@ -145,7 +164,7 @@ namespace gtt_sidebar.Core.Settings
                     return false;
 
                 var backupPath = Path.Combine(_appDataPath, $"settings_backup_{DateTime.Now:yyyyMMdd_HHmmss}.json");
-                File.Copy(_settingsFilePath, backupPath);
+                await File.CopyAsync(_settingsFilePath, backupPath);
 
                 System.Diagnostics.Debug.WriteLine($"Settings backed up to: {backupPath}");
                 return true;
@@ -160,18 +179,18 @@ namespace gtt_sidebar.Core.Settings
         /// <summary>
         /// Resets settings to default state
         /// </summary>
-        public static bool ResetToDefault()
+        public static async Task<bool> ResetToDefaultAsync()
         {
             try
             {
                 if (File.Exists(_settingsFilePath))
                 {
-                    BackupSettings(); // Backup first
+                    await BackupSettingsAsync(); // backup first
                     File.Delete(_settingsFilePath);
                 }
 
                 var defaultSettings = CreateDefaultSettings();
-                return SaveSettings(defaultSettings);
+                return await SaveSettingsAsync(defaultSettings);
             }
             catch (Exception ex)
             {
@@ -188,15 +207,28 @@ namespace gtt_sidebar.Core.Settings
             if (settings?.Window == null)
                 return false;
 
-            // Check basic validation
+            // check basic validation
             if (!settings.Window.IsValid())
                 return false;
 
-            // Check screen fit
+            // check screen fit
             if (!settings.Window.FitsOnScreen())
                 return false;
 
             return true;
+        }
+    }
+
+    // extension method for File.CopyAsync (not available in .NET Framework 4.7.2)
+    public static class FileExtensions
+    {
+        public static async Task CopyAsync(string source, string destination)
+        {
+            using (var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+            using (var destinationStream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            {
+                await sourceStream.CopyToAsync(destinationStream);
+            }
         }
     }
 }

@@ -8,13 +8,12 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using Newtonsoft.Json.Linq;
 using gtt_sidebar.Core.Interfaces;
+using gtt_sidebar.Core.Managers;
 
 namespace gtt_sidebar.Widgets.WeatherWidget
 {
-    public partial class WeatherWidget : UserControl, IWidget
+    public partial class WeatherWidget : UserControl, IWidget, ITimerSubscriber
     {
-        private HttpClient _httpClient;
-        private DispatcherTimer _timer;
         private string _currentCity = "Saint-Joseph-de-Beauce,QC,CA";
         private int _retryCount = 0;
         private const int MAX_IMMEDIATE_RETRIES = 10;
@@ -23,42 +22,50 @@ namespace gtt_sidebar.Widgets.WeatherWidget
         private DispatcherTimer _retryTimer;
         private bool _isRetrying = false;
 
-        // Free OpenWeatherMap API key - you'll need to get your own
-        private const string API_KEY = "c9b2bd0c1ea061353ec9b02831f77c57"; // Get from openweathermap.org
+        // free OpenWeatherMap API key - you'll need to get your own
+        private const string API_KEY = "c9b2bd0c1ea061353ec9b02831f77c57"; // get from openweathermap.org
 
-        public new string Name => "Weather";  // WeatherWidget
+        public new string Name => "Weather";
+        public TimeSpan UpdateInterval => TimeSpan.FromMinutes(30);
 
         public WeatherWidget()
         {
             InitializeComponent();
-            _httpClient = new HttpClient();
         }
 
         public UserControl GetControl() => this;
 
         public async Task InitializeAsync()
         {
-            // Update every 30 minutes
-            _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromMinutes(30);
-            _timer.Tick += Timer_Tick;
-            _timer.Start();
+            // subscribe to SharedResourceManager's timer system
+            SharedResourceManager.Instance.Subscribe(this);
 
-            await UpdateWeatherAsync();
+            // initial update
+            await OnTimerTickAsync();
+        }
+
+        public async Task OnTimerTickAsync()
+        {
+            // don't interfere if we're in retry mode
+            if (!_isRetrying)
+            {
+                _retryCount = 0; // reset retry count for new update cycle
+                await UpdateWeatherAsync();
+            }
         }
 
         private async Task UpdateWeatherAsync()
         {
             try
             {
-                // Current weather
+                // current weather
                 var currentUrl = $"https://api.openweathermap.org/data/2.5/weather?q={_currentCity}&appid={API_KEY}&units=metric";
-                var currentResponse = await _httpClient.GetStringAsync(currentUrl);
+                var currentResponse = await SharedResourceManager.Instance.HttpClient.GetStringAsync(currentUrl);
                 var currentData = JObject.Parse(currentResponse);
 
-                // Forecast
+                // forecast
                 var forecastUrl = $"https://api.openweathermap.org/data/2.5/forecast?q={_currentCity}&appid={API_KEY}&units=metric";
-                var forecastResponse = await _httpClient.GetStringAsync(forecastUrl);
+                var forecastResponse = await SharedResourceManager.Instance.HttpClient.GetStringAsync(forecastUrl);
                 var forecastData = JObject.Parse(forecastResponse);
 
                 UpdateCurrentWeather(currentData);
@@ -75,15 +82,16 @@ namespace gtt_sidebar.Widgets.WeatherWidget
                 await HandleWeatherError();
             }
         }
+
         private async Task HandleWeatherError()
         {
             _retryCount++;
 
-            // Show error state
+            // show error state
             WeatherDescription.Text = $"Error loading (retry {_retryCount})";
             Temperature.Text = "--°C";
 
-            // Clear forecast on error
+            // clear forecast on error
             Day1Icon.Text = "?";
             Day1Temp.Text = "--°";
             Day2Icon.Text = "?";
@@ -93,7 +101,7 @@ namespace gtt_sidebar.Widgets.WeatherWidget
 
             if (_retryCount <= MAX_IMMEDIATE_RETRIES)
             {
-                // Immediate retries: wait 10 seconds
+                // immediate retries: wait 10 seconds
                 System.Diagnostics.Debug.WriteLine($"Scheduling immediate retry {_retryCount}/{MAX_IMMEDIATE_RETRIES} in {RETRY_DELAY_SECONDS} seconds");
 
                 _isRetrying = true;
@@ -101,23 +109,13 @@ namespace gtt_sidebar.Widgets.WeatherWidget
             }
             else
             {
-                // Fallback retries: wait 5 minutes
+                // fallback retries: wait 5 minutes
                 System.Diagnostics.Debug.WriteLine($"Switching to fallback retry mode - will retry every {FALLBACK_RETRY_MINUTES} minutes");
 
                 _isRetrying = true;
                 StartRetryTimer(TimeSpan.FromMinutes(FALLBACK_RETRY_MINUTES));
 
                 WeatherDescription.Text = "Connection issues";
-            }
-        }
-
-        private async void Timer_Tick(object sender, EventArgs e)
-        {
-            // Don't interfere if we're in retry mode
-            if (!_isRetrying)
-            {
-                _retryCount = 0; // Reset retry count for new update cycle
-                await UpdateWeatherAsync();
             }
         }
 
@@ -138,10 +136,10 @@ namespace gtt_sidebar.Widgets.WeatherWidget
             var dailyTemps = new double[3];
             var dailyIcons = new string[3];
 
-            // Get next 3 days (simplified - every 8th entry represents ~24 hours)
+            // get next 3 days (simplified - every 8th entry represents ~24 hours)
             for (int i = 0; i < 3 && i * 8 < forecasts.Count; i++)
             {
-                var forecast = forecasts[i * 8]; // Every 8th entry (24 hours)
+                var forecast = forecasts[i * 8]; // every 8th entry (24 hours)
                 dailyTemps[i] = Math.Round((double)forecast["main"]["temp"]);
                 dailyIcons[i] = GetWeatherIcon((int)forecast["weather"][0]["id"]);
             }
@@ -156,27 +154,27 @@ namespace gtt_sidebar.Widgets.WeatherWidget
 
         private string GetWeatherIcon(int weatherId)
         {
-            // Using traditional if-else instead of switch expressions for C# 7.3 compatibility
+            // using traditional if-else instead of switch expressions for C# 7.3 compatibility
             if (weatherId >= 200 && weatherId <= 232)
-                return "⛈️"; // Thunderstorm
+                return "⛈️"; // thunderstorm
             else if (weatherId >= 300 && weatherId <= 321)
-                return "🌦️"; // Drizzle
+                return "🌦️"; // drizzle
             else if (weatherId >= 500 && weatherId <= 531)
-                return "🌧️"; // Rain
+                return "🌧️"; // rain
             else if (weatherId >= 600 && weatherId <= 622)
-                return "❄️"; // Snow
+                return "❄️"; // snow
             else if (weatherId >= 701 && weatherId <= 781)
-                return "🌫️"; // Atmosphere
+                return "🌫️"; // atmosphere
             else if (weatherId == 800)
-                return "☀️"; // Clear
+                return "☀️"; // clear
             else if (weatherId == 801)
-                return "🌤️"; // Few clouds
+                return "🌤️"; // few clouds
             else if (weatherId == 802)
-                return "⛅"; // Scattered clouds
+                return "⛅"; // scattered clouds
             else if (weatherId >= 803 && weatherId <= 804)
-                return "☁️"; // Broken/overcast clouds
+                return "☁️"; // broken/overcast clouds
             else
-                return "🌡️"; // Default
+                return "🌡️"; // default
         }
 
         private string CapitalizeFirst(string input)
@@ -187,7 +185,7 @@ namespace gtt_sidebar.Widgets.WeatherWidget
 
         private void LocationText_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Simple input dialog for changing city
+            // simple input dialog for changing city
             var newCity = Microsoft.VisualBasic.Interaction.InputBox(
                 "Enter city name (e.g., 'Montreal,QC,CA'):",
                 "Change Location",
@@ -229,18 +227,14 @@ namespace gtt_sidebar.Widgets.WeatherWidget
                 await UpdateWeatherAsync();
             }
         }
+
         public void Dispose()
         {
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Tick -= Timer_Tick;
-                _timer = null;
-            }
-            StopRetryTimer();
+            // unsubscribe from SharedResourceManager
+            SharedResourceManager.Instance.Unsubscribe(this);
 
-            _httpClient?.Dispose();
-            _httpClient = null;
+            // clean up retry timer
+            StopRetryTimer();
         }
     }
 }

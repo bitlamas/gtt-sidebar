@@ -12,10 +12,10 @@ namespace gtt_sidebar.Core.Managers
     /// <summary>
     /// Centralized resource manager for HTTP clients, timers, and settings
     /// </summary>
-    public sealed class ResourceManager : IDisposable
+    public sealed class SharedResourceManager : IDisposable
     {
-        private static readonly Lazy<ResourceManager> _instance = new Lazy<ResourceManager>(() => new ResourceManager());
-        public static ResourceManager Instance => _instance.Value;
+        private static readonly Lazy<SharedResourceManager> _instance = new Lazy<SharedResourceManager>(() => new SharedResourceManager());
+        public static SharedResourceManager Instance => _instance.Value;
 
         private HttpClient _httpClient;
         private DispatcherTimer _masterTimer;
@@ -29,7 +29,7 @@ namespace gtt_sidebar.Core.Managers
         public event Action<SettingsData> SettingsChanged;
         public event Action MasterTimerTick;
 
-        private ResourceManager()
+        private SharedResourceManager()
         {
             InitializeMasterTimer();
         }
@@ -74,7 +74,7 @@ namespace gtt_sidebar.Core.Managers
             {
                 _timerSubscribers.Add(subscriber);
                 _lastUpdateTimes[subscriber] = DateTime.Now;
-                System.Diagnostics.Debug.WriteLine($"ResourceManager: Subscribed {subscriber.GetType().Name} with {subscriber.UpdateInterval} interval");
+                System.Diagnostics.Debug.WriteLine($"SharedResourceManager: Subscribed {subscriber.GetType().Name} with {subscriber.UpdateInterval} interval");
             }
         }
 
@@ -85,7 +85,7 @@ namespace gtt_sidebar.Core.Managers
         {
             _timerSubscribers.Remove(subscriber);
             _lastUpdateTimes.Remove(subscriber);
-            System.Diagnostics.Debug.WriteLine($"ResourceManager: Unsubscribed {subscriber.GetType().Name}");
+            System.Diagnostics.Debug.WriteLine($"SharedResourceManager: Unsubscribed {subscriber.GetType().Name}");
         }
 
         /// <summary>
@@ -104,13 +104,13 @@ namespace gtt_sidebar.Core.Managers
 
                 if (settingsChanged)
                 {
-                    System.Diagnostics.Debug.WriteLine("ResourceManager: Settings refreshed and changed");
+                    System.Diagnostics.Debug.WriteLine("SharedResourceManager: Settings refreshed and changed");
                     SettingsChanged?.Invoke(_cachedSettings);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ResourceManager: Error refreshing settings: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SharedResourceManager: Error refreshing settings: {ex.Message}");
                 // Keep existing cached settings if reload fails
             }
         }
@@ -124,7 +124,7 @@ namespace gtt_sidebar.Core.Managers
             _lastSettingsLoad = DateTime.Now;
             SettingsStorage.SaveSettings(newSettings);
             SettingsChanged?.Invoke(_cachedSettings);
-            System.Diagnostics.Debug.WriteLine("ResourceManager: Settings updated");
+            System.Diagnostics.Debug.WriteLine("SharedResourceManager: Settings updated");
         }
 
         private HttpClient CreateHttpClient()
@@ -134,7 +134,7 @@ namespace gtt_sidebar.Core.Managers
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
             client.Timeout = TimeSpan.FromSeconds(30);
 
-            System.Diagnostics.Debug.WriteLine("ResourceManager: Created shared HttpClient");
+            System.Diagnostics.Debug.WriteLine("SharedResourceManager: Created shared HttpClient");
             return client;
         }
 
@@ -144,7 +144,7 @@ namespace gtt_sidebar.Core.Managers
             _masterTimer.Interval = TimeSpan.FromSeconds(1); // Check every second
             _masterTimer.Tick += MasterTimer_Tick;
             _masterTimer.Start();
-            System.Diagnostics.Debug.WriteLine("ResourceManager: Master timer initialized");
+            System.Diagnostics.Debug.WriteLine("SharedResourceManager: Master timer initialized");
         }
 
         private async void MasterTimer_Tick(object sender, EventArgs e)
@@ -175,7 +175,7 @@ namespace gtt_sidebar.Core.Managers
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"ResourceManager: Error updating {subscriber.GetType().Name}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"SharedResourceManager: Error updating {subscriber.GetType().Name}: {ex.Message}");
                 }
             });
 
@@ -205,7 +205,7 @@ namespace gtt_sidebar.Core.Managers
         {
             if (!_disposed)
             {
-                System.Diagnostics.Debug.WriteLine("ResourceManager: Disposing resources");
+                System.Diagnostics.Debug.WriteLine("SharedResourceManager: Disposing resources");
 
                 _masterTimer?.Stop();
                 _masterTimer = null;

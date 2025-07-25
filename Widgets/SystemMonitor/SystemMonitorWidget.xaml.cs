@@ -9,29 +9,27 @@ using System.Windows.Threading;
 using gtt_sidebar.Core.Interfaces;
 using gtt_sidebar.Core.Settings;
 
-
 namespace gtt_sidebar.Widgets.SystemMonitor
 {
     public partial class SystemMonitorWidget : UserControl, IWidget
     {
-        private DispatcherTimer _updateTimer;
         private PerformanceCounter _cpuCounter;
         private PerformanceCounter _ramCounter;
+        private DispatcherTimer _timer;
         private SystemMonitorSettings _settings;
 
-
-        // Current data values
+        // current data values
         private double _currentCpu = 0.0;
         private double _currentRam = 0.0;
         private double _currentPing = 0.0;
         private double _totalRamGB = 0.0;
 
-        // Historical data for averages (2-second intervals)
+        // historical data for averages (2-second intervals)
         private Queue<double> _cpuHistory = new Queue<double>();
         private Queue<double> _ramHistory = new Queue<double>();
         private Queue<double> _pingHistory = new Queue<double>();
 
-        // Average calculation constants
+        // average calculation constants
         private const int FIVE_MINUTE_SAMPLES = 150;  // 5 minutes ÷ 2 seconds = 150 samples
         private const int ONE_HOUR_SAMPLES = 1800;    // 60 minutes ÷ 2 seconds = 1800 samples
 
@@ -51,11 +49,11 @@ namespace gtt_sidebar.Widgets.SystemMonitor
         {
             LoadSettings();
 
-            // Initialize CPU performance counter
+            // initialize CPU performance counter
             try
             {
                 _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-                _cpuCounter.NextValue(); // First call returns 0, so initialize
+                _cpuCounter.NextValue(); // first call returns 0, so initialize
                 System.Diagnostics.Debug.WriteLine("SystemMonitor: CPU counter initialized successfully");
             }
             catch (Exception ex)
@@ -64,7 +62,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                 _cpuCounter = null;
             }
 
-            // Initialize RAM performance counter
+            // initialize RAM performance counter
             try
             {
                 _ramCounter = new PerformanceCounter("Memory", "Available MBytes");
@@ -78,45 +76,36 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                 _ramCounter = null;
             }
 
-            // Initialize the update timer
-            _updateTimer = new DispatcherTimer();
-            _updateTimer.Interval = TimeSpan.FromSeconds(_settings.UpdateFrequencySeconds); // Changed from hardcoded 2
-            _updateTimer.Tick += UpdateTimer_Tick;
-
-            
-            _updateTimer.Start();
+            // create timer with settings-based frequency
+            UpdateTimerFrequency();
 
             await Task.CompletedTask;
         }
 
-        private void UpdateTimer_Tick(object sender, EventArgs e)
+        private void UpdateTimerFrequency()
         {
-            // Get real data from all sources
-            GetRealCpuData();
-            GetRealRamData();
-            GetRealPingData();
+            // stop existing timer
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= Timer_Tick;
+                _timer = null;
+            }
 
-            // Store data for averages (only store valid readings)
-            StoreHistoricalData();
+            // create new timer with current settings frequency
+            _timer = new DispatcherTimer();
+            _timer.Interval = TimeSpan.FromSeconds(_settings.UpdateFrequencySeconds);
+            _timer.Tick += Timer_Tick;
+            _timer.Start();
 
-            UpdateDisplay();
+            System.Diagnostics.Debug.WriteLine($"SystemMonitor: Timer frequency updated to {_settings.UpdateFrequencySeconds} seconds");
         }
 
         public void RefreshSettings()
         {
             LoadSettings();
-
-            // Update timer frequency if it changed
-            if (_updateTimer != null)
-            {
-                _updateTimer.Stop();
-                _updateTimer.Interval = TimeSpan.FromSeconds(_settings.UpdateFrequencySeconds);
-                _updateTimer.Start();
-                System.Diagnostics.Debug.WriteLine($"SystemMonitor: Updated timer frequency to {_settings.UpdateFrequencySeconds}s");
-            }
-
-            // Force an immediate display update to apply new color thresholds
-            UpdateDisplay();
+            UpdateTimerFrequency(); // restart timer with new frequency
+            UpdateDisplay(); // apply new color thresholds immediately
 
             System.Diagnostics.Debug.WriteLine($"SystemMonitor: Settings refreshed - CPU: {_settings.CpuThreshold}%, RAM: {_settings.RamThreshold}%, Ping: {_settings.PingThreshold}ms");
         }
@@ -132,8 +121,21 @@ namespace gtt_sidebar.Widgets.SystemMonitor
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"SystemMonitor: Error loading settings, using defaults: {ex.Message}");
-                _settings = new SystemMonitorSettings(); // Use defaults
+                _settings = new SystemMonitorSettings(); // use defaults
             }
+        }
+
+        private async void Timer_Tick(object sender, EventArgs e)
+        {
+            // get real data from all sources
+            GetRealCpuData();
+            GetRealRamData();
+            await GetRealPingDataAsync();
+
+            // store data for averages (only store valid readings)
+            StoreHistoricalData();
+
+            UpdateDisplay();
         }
 
         private void GetRealCpuData()
@@ -143,7 +145,6 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                 if (_cpuCounter != null)
                 {
                     _currentCpu = _cpuCounter.NextValue();
-                    //System.Diagnostics.Debug.WriteLine($"SystemMonitor: CPU usage: {_currentCpu:F1}%");
                 }
                 else
                 {
@@ -167,8 +168,6 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     var availableRamGB = availableRamMB / 1024.0;
                     var usedRamGB = _totalRamGB - availableRamGB;
                     _currentRam = (usedRamGB / _totalRamGB) * 100.0;
-
-                    //System.Diagnostics.Debug.WriteLine($"SystemMonitor: RAM usage: {_currentRam:F1}% ({usedRamGB:F1}GB used of {_totalRamGB:F1}GB)");
                 }
                 else
                 {
@@ -182,7 +181,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
             }
         }
 
-        private async void GetRealPingData()
+        private async Task GetRealPingDataAsync()
         {
             try
             {
@@ -193,11 +192,10 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     if (reply.Status == IPStatus.Success)
                     {
                         _currentPing = reply.RoundtripTime;
-                        //System.Diagnostics.Debug.WriteLine($"SystemMonitor: Ping to 8.8.8.8: {_currentPing}ms");
                     }
                     else
                     {
-                        _currentPing = -1; // Will display as N/A
+                        _currentPing = -1; // will display as N/A
                         System.Diagnostics.Debug.WriteLine($"SystemMonitor: Ping failed: {reply.Status}");
                     }
                 }
@@ -205,17 +203,17 @@ namespace gtt_sidebar.Widgets.SystemMonitor
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"SystemMonitor: Error pinging: {ex.Message}");
-                _currentPing = -1; // Will display as N/A
+                _currentPing = -1; // will display as N/A
             }
         }
 
         private void StoreHistoricalData()
         {
-            // Only store valid readings (>= 0)
+            // only store valid readings (>= 0)
             if (_currentCpu >= 0)
             {
                 _cpuHistory.Enqueue(_currentCpu);
-                // Keep only the last hour of data
+                // keep only the last hour of data
                 while (_cpuHistory.Count > ONE_HOUR_SAMPLES)
                 {
                     _cpuHistory.Dequeue();
@@ -243,9 +241,9 @@ namespace gtt_sidebar.Widgets.SystemMonitor
 
         private double CalculateAverage(Queue<double> data, int sampleCount)
         {
-            if (data.Count == 0) return -1; // No data available
+            if (data.Count == 0) return -1; // no data available
 
-            // Take the last N samples (or all if we have fewer)
+            // take the last N samples (or all if we have fewer)
             var samplesToUse = Math.Min(sampleCount, data.Count);
             var recentSamples = data.Skip(data.Count - samplesToUse);
 
@@ -256,7 +254,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
         {
             try
             {
-                // Update CPU usage (%)
+                // update CPU usage (%)
                 if (_currentCpu >= 0)
                 {
                     CpuValue.Text = $"{_currentCpu:F0}%";
@@ -266,7 +264,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     CpuValue.Text = "N/A";
                 }
 
-                // Update RAM usage (%)
+                // update RAM usage (%)
                 if (_currentRam >= 0)
                 {
                     RamValue.Text = $"{_currentRam:F0}%";
@@ -276,7 +274,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     RamValue.Text = "N/A";
                 }
 
-                // Update Ping latency (ms)
+                // update Ping latency (ms)
                 if (_currentPing >= 0)
                 {
                     PingValue.Text = $"{_currentPing:F0}ms";
@@ -286,7 +284,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     PingValue.Text = "N/A";
                 }
 
-                // Update tooltips with real averages!
+                // update tooltips with real averages
                 if (_currentCpu >= 0)
                 {
                     var cpu5Min = CalculateAverage(_cpuHistory, FIVE_MINUTE_SAMPLES);
@@ -356,8 +354,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
                     PingValue.ToolTip = "Network ping unavailable";
                 }
 
-                // Color coding
-                // Color coding using settings-based thresholds
+                // color coding using settings-based thresholds
                 if (_currentCpu >= 0)
                 {
                     CpuValue.Foreground = _currentCpu > _settings.CpuThreshold ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.Black;
@@ -393,14 +390,15 @@ namespace gtt_sidebar.Widgets.SystemMonitor
 
         public void Dispose()
         {
-            // Clean up the timer
-            if (_updateTimer != null)
+            // clean up timer
+            if (_timer != null)
             {
-                _updateTimer.Stop();
-                _updateTimer = null;
+                _timer.Stop();
+                _timer.Tick -= Timer_Tick;
+                _timer = null;
             }
 
-            // Clean up the performance counters
+            // clean up the performance counters
             if (_cpuCounter != null)
             {
                 _cpuCounter.Dispose();

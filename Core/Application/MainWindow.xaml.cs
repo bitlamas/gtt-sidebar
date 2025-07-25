@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
+using System.Resources;
 using System.Windows;
 using System.Windows.Forms;
-using System.Drawing;
+using gtt_sidebar.Core.Managers;
+using gtt_sidebar.Core.Settings;
 using gtt_sidebar.Widgets.ClockWidget;
 using gtt_sidebar.Widgets.StockWidget;
 using gtt_sidebar.Widgets.WeatherWidget;
-using gtt_sidebar.Core.Managers;
-using gtt_sidebar.Core.Settings;
 
 namespace gtt_sidebar.Core.Application
 {
@@ -26,6 +27,9 @@ namespace gtt_sidebar.Core.Application
             // Load settings and apply to window
             _currentSettings = SettingsStorage.LoadSettings();
             ApplySettings(_currentSettings);
+
+            var resourceManager = SharedResourceManager.Instance;
+            System.Diagnostics.Debug.WriteLine("ResourceManager initialized");
 
             _widgetManager = new WidgetManager();
             LoadWidgets();

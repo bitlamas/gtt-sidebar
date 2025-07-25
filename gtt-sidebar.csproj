@@ -68,6 +68,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Core\Interfaces\ITimerSubscriber.cs" />
+    <Compile Include="Core\Managers\SharedResourceManager.cs" />
     <Compile Include="Core\Managers\StartupManager.cs" />
     <Compile Include="Core\Settings\IconCatalog.cs" />
     <Compile Include="Core\Settings\IconPicker.xaml.cs">

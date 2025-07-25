@@ -1,12 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
+using Newtonsoft.Json;
 
 namespace gtt_sidebar.Core.Settings
 {
     /// <summary>
-    /// Handles loading and saving shortcuts data to JSON file
+    /// Handles loading and saving shortcuts data to JSON file with async operations
     /// </summary>
     public static class ShortcutsStorage
     {
@@ -18,13 +19,13 @@ namespace gtt_sidebar.Core.Settings
         private static readonly string _iconsPath = Path.Combine(_appDataPath, "icons");
 
         /// <summary>
-        /// Loads shortcuts data from file, creates default if file doesn't exist
+        /// Async version - loads shortcuts data from file, creates default if file doesn't exist
         /// </summary>
-        public static ShortcutsData LoadShortcuts()
+        public static async Task<ShortcutsData> LoadShortcutsAsync()
         {
             try
             {
-                // Ensure directories exist
+                // ensure directories exist
                 Directory.CreateDirectory(_appDataPath);
                 Directory.CreateDirectory(_iconsPath);
 
@@ -32,29 +33,29 @@ namespace gtt_sidebar.Core.Settings
                 {
                     System.Diagnostics.Debug.WriteLine("Shortcuts file doesn't exist, creating default");
                     var newData = ShortcutsData.CreateDefault();
-                    SaveShortcuts(newData); // Save immediately
+                    await SaveShortcutsAsync(newData);
                     return newData;
                 }
 
-                var json = File.ReadAllText(_shortcutsFilePath);
+                var json = await File.ReadAllTextAsync(_shortcutsFilePath);
                 var shortcutsData = JsonConvert.DeserializeObject<ShortcutsData>(json);
 
-                // Validate data integrity
+                // validate data integrity
                 if (shortcutsData == null)
                 {
                     System.Diagnostics.Debug.WriteLine("Invalid shortcuts data, creating default");
                     var newData = ShortcutsData.CreateDefault();
-                    SaveShortcuts(newData);
+                    await SaveShortcutsAsync(newData);
                     return newData;
                 }
 
-                // Clean up any invalid data
+                // clean up any invalid data
                 shortcutsData.ValidateAndCleanup();
 
                 if (shortcutsData.Shortcuts.Count == 0)
                 {
                     System.Diagnostics.Debug.WriteLine("No shortcuts found - empty state");
-                    // Don't auto-create defaults anymore
+                    // don't auto-create defaults anymore
                 }
 
                 System.Diagnostics.Debug.WriteLine($"Loaded {shortcutsData.Shortcuts.Count} shortcuts");
@@ -64,58 +65,41 @@ namespace gtt_sidebar.Core.Settings
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading shortcuts: {ex.Message}");
                 var newData = ShortcutsData.CreateDefault();
-                SaveShortcuts(newData);
+                await SaveShortcutsAsync(newData);
                 return newData;
             }
         }
+
         /// <summary>
-        /// Saves a custom icon from a bitmap encoder and returns the filename
+        /// Synchronous version for backward compatibility
         /// </summary>
-        public static string SaveCustomIconFromBitmap(PngBitmapEncoder encoder, string fileName)
+        public static ShortcutsData LoadShortcuts()
         {
-            try
-            {
-                // Ensure icons directory exists
-                Directory.CreateDirectory(_iconsPath);
-
-                var destinationPath = Path.Combine(_iconsPath, fileName);
-
-                using (var fileStream = new FileStream(destinationPath, FileMode.Create))
-                {
-                    encoder.Save(fileStream);
-                }
-
-                System.Diagnostics.Debug.WriteLine($"SaveCustomIconFromBitmap: Saved {fileName}");
-                return fileName; // Return just the filename, not full path
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving custom icon from bitmap: {ex.Message}");
-                return null;
-            }
+            return Task.Run(async () => await LoadShortcutsAsync()).Result;
         }
+
         /// <summary>
-        /// Saves shortcuts data to file
+        /// Async version - saves shortcuts data to file
         /// </summary>
-        public static bool SaveShortcuts(ShortcutsData shortcutsData)
+        public static async Task<bool> SaveShortcutsAsync(ShortcutsData shortcutsData)
         {
             try
             {
-                // Ensure directory exists
+                // ensure directory exists
                 Directory.CreateDirectory(_appDataPath);
 
-                // Validate data before saving
+                // validate data before saving
                 if (shortcutsData?.Shortcuts == null)
                 {
                     System.Diagnostics.Debug.WriteLine("Cannot save null shortcuts data");
                     return false;
                 }
 
-                // Clean up data before saving
+                // clean up data before saving
                 shortcutsData.ValidateAndCleanup();
 
                 var json = JsonConvert.SerializeObject(shortcutsData, Formatting.Indented);
-                File.WriteAllText(_shortcutsFilePath, json);
+                await File.WriteAllTextAsync(_shortcutsFilePath, json);
 
                 System.Diagnostics.Debug.WriteLine($"Saved {shortcutsData.Shortcuts.Count} shortcuts");
                 return true;
@@ -125,6 +109,50 @@ namespace gtt_sidebar.Core.Settings
                 System.Diagnostics.Debug.WriteLine($"Error saving shortcuts: {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Synchronous version for backward compatibility
+        /// </summary>
+        public static bool SaveShortcuts(ShortcutsData shortcutsData)
+        {
+            return Task.Run(async () => await SaveShortcutsAsync(shortcutsData)).Result;
+        }
+
+        /// <summary>
+        /// Saves a custom icon from a bitmap encoder and returns the filename
+        /// </summary>
+        public static async Task<string> SaveCustomIconFromBitmapAsync(PngBitmapEncoder encoder, string fileName)
+        {
+            try
+            {
+                // ensure icons directory exists
+                Directory.CreateDirectory(_iconsPath);
+
+                var destinationPath = Path.Combine(_iconsPath, fileName);
+
+                using (var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    encoder.Save(fileStream);
+                    await fileStream.FlushAsync();
+                }
+
+                System.Diagnostics.Debug.WriteLine($"SaveCustomIconFromBitmapAsync: Saved {fileName}");
+                return fileName;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving custom icon from bitmap: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Synchronous version for backward compatibility
+        /// </summary>
+        public static string SaveCustomIconFromBitmap(PngBitmapEncoder encoder, string fileName)
+        {
+            return Task.Run(async () => await SaveCustomIconFromBitmapAsync(encoder, fileName)).Result;
         }
 
         /// <summary>
@@ -144,37 +172,49 @@ namespace gtt_sidebar.Core.Settings
         }
 
         /// <summary>
-        /// Saves a custom icon file and returns the relative path for storage
+        /// Async version - saves a custom icon file and returns the relative path for storage
         /// </summary>
-        public static string SaveCustomIcon(string sourceFilePath, string shortcutId)
+        public static async Task<string> SaveCustomIconAsync(string sourceFilePath, string shortcutId)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(sourceFilePath) || !File.Exists(sourceFilePath))
                 {
-                    System.Diagnostics.Debug.WriteLine("SaveCustomIcon: Source file doesn't exist");
+                    System.Diagnostics.Debug.WriteLine("SaveCustomIconAsync: Source file doesn't exist");
                     return null;
                 }
 
-                // Ensure icons directory exists
+                // ensure icons directory exists
                 Directory.CreateDirectory(_iconsPath);
 
-                // Generate unique filename
+                // generate unique filename
                 var extension = Path.GetExtension(sourceFilePath);
                 var fileName = $"{shortcutId}{extension}";
                 var destinationPath = Path.Combine(_iconsPath, fileName);
 
-                // Copy file to icons directory
-                File.Copy(sourceFilePath, destinationPath, true);
+                // copy file to icons directory
+                using (var sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+                using (var destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    await sourceStream.CopyToAsync(destinationStream);
+                }
 
-                System.Diagnostics.Debug.WriteLine($"SaveCustomIcon: Saved icon for {shortcutId} to {fileName}");
-                return fileName; // Return just the filename, not full path
+                System.Diagnostics.Debug.WriteLine($"SaveCustomIconAsync: Saved icon for {shortcutId} to {fileName}");
+                return fileName;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error saving custom icon: {ex.Message}");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Synchronous version for backward compatibility
+        /// </summary>
+        public static string SaveCustomIcon(string sourceFilePath, string shortcutId)
+        {
+            return Task.Run(async () => await SaveCustomIconAsync(sourceFilePath, shortcutId)).Result;
         }
 
         /// <summary>
@@ -219,7 +259,7 @@ namespace gtt_sidebar.Core.Settings
         /// <summary>
         /// Backs up the current shortcuts file
         /// </summary>
-        public static bool BackupShortcuts()
+        public static async Task<bool> BackupShortcutsAsync()
         {
             try
             {
@@ -227,7 +267,11 @@ namespace gtt_sidebar.Core.Settings
                     return false;
 
                 var backupPath = Path.Combine(_appDataPath, $"shortcuts_backup_{DateTime.Now:yyyyMMdd_HHmmss}.json");
-                File.Copy(_shortcutsFilePath, backupPath);
+                using (var sourceStream = new FileStream(_shortcutsFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+                using (var destinationStream = new FileStream(backupPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    await sourceStream.CopyToAsync(destinationStream);
+                }
 
                 System.Diagnostics.Debug.WriteLine($"Shortcuts backed up to: {backupPath}");
                 return true;
@@ -242,18 +286,18 @@ namespace gtt_sidebar.Core.Settings
         /// <summary>
         /// Resets shortcuts to default state
         /// </summary>
-        public static bool ResetToDefault()
+        public static async Task<bool> ResetToDefaultAsync()
         {
             try
             {
                 if (File.Exists(_shortcutsFilePath))
                 {
-                    BackupShortcuts(); // Backup first
+                    await BackupShortcutsAsync(); // backup first
                     File.Delete(_shortcutsFilePath);
                 }
 
                 var defaultData = ShortcutsData.CreateDefault();
-                return SaveShortcuts(defaultData);
+                return await SaveShortcutsAsync(defaultData);
             }
             catch (Exception ex)
             {
@@ -270,7 +314,7 @@ namespace gtt_sidebar.Core.Settings
             if (shortcutsData?.Shortcuts == null)
                 return false;
 
-            // Check that all shortcuts have valid data
+            // check that all shortcuts have valid data
             foreach (var shortcut in shortcutsData.Shortcuts)
             {
                 if (shortcut == null || !shortcut.IsValid())
@@ -293,7 +337,7 @@ namespace gtt_sidebar.Core.Settings
                 var iconFiles = Directory.GetFiles(_iconsPath, "*.*", SearchOption.TopDirectoryOnly);
                 var usedIcons = new System.Collections.Generic.HashSet<string>();
 
-                // Collect all custom icons currently in use
+                // collect all custom icons currently in use
                 if (shortcutsData?.Shortcuts != null)
                 {
                     foreach (var shortcut in shortcutsData.Shortcuts)
@@ -305,7 +349,7 @@ namespace gtt_sidebar.Core.Settings
                     }
                 }
 
-                // Delete orphaned icon files
+                // delete orphaned icon files
                 foreach (var iconFile in iconFiles)
                 {
                     var fileName = Path.GetFileName(iconFile);

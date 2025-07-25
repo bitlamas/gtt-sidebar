@@ -1,16 +1,19 @@
-﻿using System;
+﻿using gtt_sidebar.Core.Interfaces;
+using gtt_sidebar.Core.Managers;
+using gtt_sidebar.Core.Managers;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Resources;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using Newtonsoft.Json.Linq;
-using gtt_sidebar.Core.Interfaces;
 
 namespace gtt_sidebar.Widgets.StockWidget
 {
@@ -29,24 +32,17 @@ namespace gtt_sidebar.Widgets.StockWidget
         public Canvas ChartCanvas { get; set; }
     }
 
-    public partial class StockWidget : UserControl, IWidget
+    public partial class StockWidget : UserControl, IWidget, ITimerSubscriber
     {
-        private HttpClient _httpClient;
-        private DispatcherTimer _timer;
         private List<StockItem> _stocks;
         private double _usdToCadRate = 1.35; // Default, will be updated
 
-        public new string Name => "Stocks";   // StockWidget
+        public new string Name => "Stocks";
+        public TimeSpan UpdateInterval => TimeSpan.FromMinutes(10);
 
         public StockWidget()
         {
             InitializeComponent();
-            _httpClient = new HttpClient();
-
-            // Add user agent for Yahoo Finance
-            _httpClient.DefaultRequestHeaders.Add("User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-
             InitializeStocks();
         }
 
@@ -198,12 +194,15 @@ namespace gtt_sidebar.Widgets.StockWidget
 
         public async Task InitializeAsync()
         {
-            // Update every 10 minutes since we have unlimited calls
-            _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromMinutes(10);
-            _timer.Tick += Timer_Tick;
-            _timer.Start();
+            // Subscribe to SharedResourceManager's timer system
+            SharedResourceManager.Instance.Subscribe(this);
 
+            // Initial update
+            await OnTimerTickAsync();
+        }
+
+        public async Task OnTimerTickAsync()
+        {
             await UpdateAllStocksAsync();
         }
 
@@ -232,7 +231,7 @@ namespace gtt_sidebar.Widgets.StockWidget
             try
             {
                 var url = "https://query1.finance.yahoo.com/v8/finance/chart/USDCAD=X?period1=1640995200&period2=9999999999&interval=1d";
-                var response = await _httpClient.GetStringAsync(url);
+                var response = await SharedResourceManager.Instance.HttpClient.GetStringAsync(url);
                 var data = JObject.Parse(response);
 
                 var chart = data["chart"]["result"][0];
@@ -279,7 +278,7 @@ namespace gtt_sidebar.Widgets.StockWidget
             {
                 // Get current price
                 var url = $"https://api.kraken.com/0/public/Ticker?pair={stock.PairName}";
-                var response = await _httpClient.GetStringAsync(url);
+                var response = await SharedResourceManager.Instance.HttpClient.GetStringAsync(url);
                 var data = JObject.Parse(response);
 
                 if (data["error"] != null && ((JArray)data["error"]).Count > 0)
@@ -328,7 +327,7 @@ namespace gtt_sidebar.Widgets.StockWidget
 
                 try
                 {
-                    var historicalResponse = await _httpClient.GetStringAsync(historicalUrl);
+                    var historicalResponse = await SharedResourceManager.Instance.HttpClient.GetStringAsync(historicalUrl);
                     var historicalData = JObject.Parse(historicalResponse);
 
                     if (historicalData["error"] != null && ((JArray)historicalData["error"]).Count > 0)
@@ -417,7 +416,7 @@ namespace gtt_sidebar.Widgets.StockWidget
 
                 var url = $"https://query1.finance.yahoo.com/v8/finance/chart/{stock.PairName}?period1={period1}&period2={period2}&interval=1d";
 
-                var response = await _httpClient.GetStringAsync(url);
+                var response = await SharedResourceManager.Instance.HttpClient.GetStringAsync(url);
                 var data = JObject.Parse(response);
 
                 var chart = data["chart"]["result"][0];
@@ -469,10 +468,6 @@ namespace gtt_sidebar.Widgets.StockWidget
             }
         }
 
-        private async void Timer_Tick(object sender, EventArgs e)
-        {
-            await UpdateAllStocksAsync();
-        }
         private string FormatCurrency(double amount)
         {
             if (amount >= 1000)
@@ -584,15 +579,8 @@ namespace gtt_sidebar.Widgets.StockWidget
 
         void IWidget.Dispose()
         {
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Tick -= Timer_Tick;
-                _timer = null;
-            }
-
-            _httpClient?.Dispose();
-            _httpClient = null;
+            // Unsubscribe from SharedResourceManager
+            SharedResourceManager.Instance.Unsubscribe(this);
         }
     }
 }

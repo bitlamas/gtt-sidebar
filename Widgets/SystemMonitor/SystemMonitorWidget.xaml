@@ -48,21 +48,21 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock x:Name="CpuValue" Grid.Column="0" Text="45%" 
+                <TextBlock x:Name="CpuValue" Grid.Column="0" Text="-" 
                           FontSize="9" FontWeight="Normal" 
                           HorizontalAlignment="Center" 
                           VerticalAlignment="Center"
                           Foreground="Black"
                           ToolTip="CPU usage"/>
 
-                <TextBlock x:Name="RamValue" Grid.Column="1" Text="62%" 
+                <TextBlock x:Name="RamValue" Grid.Column="1" Text="-" 
                           FontSize="9" FontWeight="Normal" 
                           HorizontalAlignment="Center" 
                           VerticalAlignment="Center"
                           Foreground="Black"
                           ToolTip="RAM usage"/>
 
-                <TextBlock x:Name="PingValue" Grid.Column="2" Text="42ms" 
+                <TextBlock x:Name="PingValue" Grid.Column="2" Text="-" 
                           FontSize="9" FontWeight="Normal" 
                           HorizontalAlignment="Center" 
                           VerticalAlignment="Center"
