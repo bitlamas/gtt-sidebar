@@ -1,4 +1,7 @@
-﻿using System;
+﻿using gtt_sidebar.Core.Interfaces;
+using gtt_sidebar.Core.Managers;
+using gtt_sidebar.Core.Settings;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -6,8 +9,6 @@ using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using gtt_sidebar.Core.Interfaces;
-using gtt_sidebar.Core.Settings;
 
 namespace gtt_sidebar.Widgets.SystemMonitor
 {
@@ -48,7 +49,7 @@ namespace gtt_sidebar.Widgets.SystemMonitor
         public async Task InitializeAsync()
         {
             LoadSettings();
-
+            SharedResourceManager.Instance.SettingsChanged += OnSettingsChanged;
             // initialize CPU performance counter
             try
             {
@@ -82,6 +83,13 @@ namespace gtt_sidebar.Widgets.SystemMonitor
             await Task.CompletedTask;
         }
 
+        private void OnSettingsChanged(SettingsData newSettings)
+        {
+            _settings = newSettings.SystemMonitor;
+            UpdateTimerFrequency(); // restart timer with new frequency
+            UpdateDisplay(); // apply new color thresholds immediately
+            System.Diagnostics.Debug.WriteLine($"SystemMonitor: Settings changed via SharedResourceManager");
+        }
         private void UpdateTimerFrequency()
         {
             // stop existing timer
@@ -109,21 +117,21 @@ namespace gtt_sidebar.Widgets.SystemMonitor
 
             System.Diagnostics.Debug.WriteLine($"SystemMonitor: Settings refreshed - CPU: {_settings.CpuThreshold}%, RAM: {_settings.RamThreshold}%, Ping: {_settings.PingThreshold}ms");
         }
-
         private void LoadSettings()
         {
             try
             {
-                var allSettings = SettingsStorage.LoadSettings();
-                _settings = allSettings.SystemMonitor;
-                System.Diagnostics.Debug.WriteLine($"SystemMonitor: Loaded settings - CPU: {_settings.CpuThreshold}%, RAM: {_settings.RamThreshold}%, Ping: {_settings.PingThreshold}ms, Freq: {_settings.UpdateFrequencySeconds}s");
+                // Use cached settings instead of file access
+                _settings = SharedResourceManager.Instance.Settings.SystemMonitor;
+                System.Diagnostics.Debug.WriteLine($"SystemMonitor: Loaded cached settings - CPU: {_settings.CpuThreshold}%, RAM: {_settings.RamThreshold}%, Ping: {_settings.PingThreshold}ms, Freq: {_settings.UpdateFrequencySeconds}s");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SystemMonitor: Error loading settings, using defaults: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SystemMonitor: Error loading cached settings, using defaults: {ex.Message}");
                 _settings = new SystemMonitorSettings(); // use defaults
             }
         }
+
 
         private async void Timer_Tick(object sender, EventArgs e)
         {
@@ -390,6 +398,8 @@ namespace gtt_sidebar.Widgets.SystemMonitor
 
         public void Dispose()
         {
+            SharedResourceManager.Instance.SettingsChanged -= OnSettingsChanged;
+
             // clean up timer
             if (_timer != null)
             {

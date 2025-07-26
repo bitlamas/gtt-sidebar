@@ -1,5 +1,4 @@
-﻿using gtt_sidebar.Core.Settings;
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using gtt_sidebar.Core.Settings;
+using gtt_sidebar.Core.Managers;
 
 namespace gtt_sidebar.Core.Settings
 {
@@ -464,7 +465,7 @@ namespace gtt_sidebar.Core.Settings
                 _shortcutsData.Shortcuts.RemoveAt(index);
                 _shortcutsData.Shortcuts.Insert(index - 1, shortcut);
                 UpdateOrders();
-                ShortcutsStorage.SaveShortcuts(_shortcutsData);
+                SharedResourceManager.Instance.QueueSave("shortcuts", _shortcutsData);
                 LoadShortcutsToUI();
                 ShortcutsChanged?.Invoke();
             }
@@ -481,7 +482,7 @@ namespace gtt_sidebar.Core.Settings
                 _shortcutsData.Shortcuts.RemoveAt(index);
                 _shortcutsData.Shortcuts.Insert(index + 1, shortcut);
                 UpdateOrders();
-                ShortcutsStorage.SaveShortcuts(_shortcutsData);
+                SharedResourceManager.Instance.QueueSave("shortcuts", _shortcutsData);
                 LoadShortcutsToUI();
                 ShortcutsChanged?.Invoke();
             }
@@ -762,7 +763,7 @@ namespace gtt_sidebar.Core.Settings
                         }
 
                         // Save to storage
-                        ShortcutsStorage.SaveShortcuts(_shortcutsData);
+                        SharedResourceManager.Instance.QueueSave("shortcuts", _shortcutsData);
 
                         // Disable save button
                         button.IsEnabled = false;
@@ -807,7 +808,7 @@ namespace gtt_sidebar.Core.Settings
                     _shortcutsData.RemoveShortcut(shortcutId);
 
                     // Save to storage
-                    ShortcutsStorage.SaveShortcuts(_shortcutsData);
+                    SharedResourceManager.Instance.QueueSave("shortcuts", _shortcutsData);
 
                     // Remove from UI
                     if (_shortcutCards.ContainsKey(shortcutId))
@@ -839,7 +840,7 @@ namespace gtt_sidebar.Core.Settings
                 var newShortcut = _shortcutsData.AddShortcut("New Shortcut", "calc", "builtin", "📁");
 
                 // Save to storage
-                ShortcutsStorage.SaveShortcuts(_shortcutsData);
+                SharedResourceManager.Instance.QueueSave("shortcuts", _shortcutsData);
 
                 // Add to UI
                 var card = CreateShortcutCard(newShortcut);
@@ -1143,12 +1144,14 @@ namespace gtt_sidebar.Core.Settings
                 return;
             }
 
-            // Apply settings
+            // Apply settings via SharedResourceManager (this will save to file and notify subscribers)
             SettingsApplied?.Invoke(_currentSettings);
 
             // TRIGGER SHORTCUTS REFRESH TOO
             ShortcutsChanged?.Invoke();
-            SystemMonitorSettingsChanged?.Invoke();
+
+            // Remove direct SystemMonitorSettingsChanged call since it's now handled by SharedResourceManager
+            // SystemMonitorSettingsChanged?.Invoke(); // REMOVE THIS LINE
 
             this.Close();
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -34,7 +35,7 @@ namespace gtt_sidebar.Core.Settings
                     return newSettings;
                 }
 
-                var json = await File.ReadAllTextAsync(_settingsFilePath);
+                var json = await ReadAllTextAsync(_settingsFilePath);
                 var settings = JsonConvert.DeserializeObject<SettingsData>(json);
 
                 // validate data integrity
@@ -72,7 +73,32 @@ namespace gtt_sidebar.Core.Settings
                 return newSettings;
             }
         }
+        private static async Task<string> ReadAllTextAsync(string path)
+        {
+            using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+            using (var reader = new StreamReader(fileStream))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
 
+        private static async Task WriteAllTextAsync(string path, string content)
+        {
+            using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var writer = new StreamWriter(fileStream))
+            {
+                await writer.WriteAsync(content);
+            }
+        }
+
+        private static async Task CopyFileAsync(string source, string destination)
+        {
+            using (var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+            using (var destinationStream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            {
+                await sourceStream.CopyToAsync(destinationStream);
+            }
+        }
         /// <summary>
         /// Synchronous version for backward compatibility
         /// </summary>
@@ -103,7 +129,7 @@ namespace gtt_sidebar.Core.Settings
                 settings.Window.Validate();
 
                 var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
-                await File.WriteAllTextAsync(_settingsFilePath, json);
+                await WriteAllTextAsync(_settingsFilePath, json);
 
                 System.Diagnostics.Debug.WriteLine("Settings saved successfully");
                 return true;
@@ -164,7 +190,7 @@ namespace gtt_sidebar.Core.Settings
                     return false;
 
                 var backupPath = Path.Combine(_appDataPath, $"settings_backup_{DateTime.Now:yyyyMMdd_HHmmss}.json");
-                await File.CopyAsync(_settingsFilePath, backupPath);
+                await CopyFileAsync(_settingsFilePath, backupPath);
 
                 System.Diagnostics.Debug.WriteLine($"Settings backed up to: {backupPath}");
                 return true;
@@ -216,19 +242,6 @@ namespace gtt_sidebar.Core.Settings
                 return false;
 
             return true;
-        }
-    }
-
-    // extension method for File.CopyAsync (not available in .NET Framework 4.7.2)
-    public static class FileExtensions
-    {
-        public static async Task CopyAsync(string source, string destination)
-        {
-            using (var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
-            using (var destinationStream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
-            {
-                await sourceStream.CopyToAsync(destinationStream);
-            }
         }
     }
 }

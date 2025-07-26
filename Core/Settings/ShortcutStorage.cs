@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using Newtonsoft.Json;
@@ -37,7 +38,7 @@ namespace gtt_sidebar.Core.Settings
                     return newData;
                 }
 
-                var json = await File.ReadAllTextAsync(_shortcutsFilePath);
+                var json = await ReadAllTextAsync(_shortcutsFilePath);
                 var shortcutsData = JsonConvert.DeserializeObject<ShortcutsData>(json);
 
                 // validate data integrity
@@ -99,7 +100,7 @@ namespace gtt_sidebar.Core.Settings
                 shortcutsData.ValidateAndCleanup();
 
                 var json = JsonConvert.SerializeObject(shortcutsData, Formatting.Indented);
-                await File.WriteAllTextAsync(_shortcutsFilePath, json);
+                await WriteAllTextAsync(_shortcutsFilePath, json);
 
                 System.Diagnostics.Debug.WriteLine($"Saved {shortcutsData.Shortcuts.Count} shortcuts");
                 return true;
@@ -327,6 +328,25 @@ namespace gtt_sidebar.Core.Settings
         /// <summary>
         /// Cleans up orphaned custom icon files (icons with no corresponding shortcuts)
         /// </summary>
+        /// 
+        private static async Task<string> ReadAllTextAsync(string path)
+        {
+            using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+            using (var reader = new StreamReader(fileStream))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+
+        private static async Task WriteAllTextAsync(string path, string content)
+        {
+            using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var writer = new StreamWriter(fileStream))
+            {
+                await writer.WriteAsync(content);
+            }
+        }
+
         public static void CleanupOrphanedIcons(ShortcutsData shortcutsData)
         {
             try

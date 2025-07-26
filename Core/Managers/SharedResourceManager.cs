@@ -1,11 +1,12 @@
-﻿using System;
+﻿using gtt_sidebar.Core.Interfaces;
+using gtt_sidebar.Core.Settings;
+using gtt_sidebar.Widgets.Notes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using gtt_sidebar.Core.Settings;
-using gtt_sidebar.Core.Interfaces;
 
 namespace gtt_sidebar.Core.Managers
 {
@@ -14,6 +15,7 @@ namespace gtt_sidebar.Core.Managers
     /// </summary>
     public sealed class SharedResourceManager : IDisposable
     {
+
         private static readonly Lazy<SharedResourceManager> _instance = new Lazy<SharedResourceManager>(() => new SharedResourceManager());
         public static SharedResourceManager Instance => _instance.Value;
 
@@ -24,6 +26,9 @@ namespace gtt_sidebar.Core.Managers
         private readonly List<ITimerSubscriber> _timerSubscribers = new List<ITimerSubscriber>();
         private readonly Dictionary<ITimerSubscriber, DateTime> _lastUpdateTimes = new Dictionary<ITimerSubscriber, DateTime>();
         private bool _disposed = false;
+        private readonly Dictionary<string, object> _pendingSaves = new Dictionary<string, object>();
+        private DispatcherTimer _saveTimer;
+        private readonly object _saveLock = new object();
 
         // Events
         public event Action<SettingsData> SettingsChanged;
@@ -32,6 +37,8 @@ namespace gtt_sidebar.Core.Managers
         private SharedResourceManager()
         {
             InitializeMasterTimer();
+            InitializeSaveTimer();
+
         }
 
         /// <summary>
@@ -199,6 +206,65 @@ namespace gtt_sidebar.Core.Managers
                    settings1.SystemMonitor.RamThreshold == settings2.SystemMonitor.RamThreshold &&
                    settings1.SystemMonitor.PingThreshold == settings2.SystemMonitor.PingThreshold &&
                    settings1.SystemMonitor.UpdateFrequencySeconds == settings2.SystemMonitor.UpdateFrequencySeconds;
+        }
+
+        private void InitializeSaveTimer()
+        {
+            _saveTimer = new DispatcherTimer();
+            _saveTimer.Interval = TimeSpan.FromSeconds(2); // Batch saves every 2 seconds
+            _saveTimer.Tick += SaveTimer_Tick;
+        }
+
+        public void QueueSave<T>(string key, T data)
+        {
+            lock (_saveLock)
+            {
+                _pendingSaves[key] = data;
+                if (!_saveTimer.IsEnabled)
+                {
+                    _saveTimer.Start();
+                }
+            }
+        }
+
+        private async void SaveTimer_Tick(object sender, EventArgs e)
+        {
+            Dictionary<string, object> toSave;
+            lock (_saveLock)
+            {
+                if (_pendingSaves.Count == 0)
+                {
+                    _saveTimer.Stop();
+                    return;
+                }
+                toSave = new Dictionary<string, object>(_pendingSaves);
+                _pendingSaves.Clear();
+                _saveTimer.Stop();
+            }
+
+            foreach (var kvp in toSave)
+            {
+                try
+                {
+                    switch (kvp.Key)
+                    {
+                        case "settings":
+                            await SettingsStorage.SaveSettingsAsync((SettingsData)kvp.Value);
+                            break;
+                        case "shortcuts":
+                            await ShortcutsStorage.SaveShortcutsAsync((ShortcutsData)kvp.Value);
+                            break;
+                        case "notes":
+                            await NotesStorage.SaveNotesAsync((NotesData)kvp.Value);
+                            break;
+                    }
+                    System.Diagnostics.Debug.WriteLine($"Batch saved: {kvp.Key}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Batch save error for {kvp.Key}: {ex.Message}");
+                }
+            }
         }
 
         public void Dispose()

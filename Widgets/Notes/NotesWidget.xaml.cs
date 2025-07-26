@@ -1,10 +1,11 @@
-﻿using System;
+﻿using gtt_sidebar.Core.Interfaces;
+using gtt_sidebar.Core.Managers;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using gtt_sidebar.Core.Interfaces;
 
 namespace gtt_sidebar.Widgets.Notes
 {
@@ -169,7 +170,7 @@ namespace gtt_sidebar.Widgets.Notes
             UpdatePreview();
 
             // Save to storage
-            NotesStorage.SaveNotes(_notesData);
+            SharedResourceManager.Instance.QueueSave("notes", _notesData);
         }
 
         public void Dispose()

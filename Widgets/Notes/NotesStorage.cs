@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -36,7 +37,7 @@ namespace gtt_sidebar.Widgets.Notes
                     return newData;
                 }
 
-                var json = await File.ReadAllTextAsync(_notesFilePath);
+                var json = await ReadAllTextAsync(_notesFilePath);
                 var notesData = JsonConvert.DeserializeObject<NotesData>(json);
 
                 // validate data integrity
@@ -92,7 +93,7 @@ namespace gtt_sidebar.Widgets.Notes
                 }
 
                 var json = JsonConvert.SerializeObject(notesData, Formatting.Indented);
-                await File.WriteAllTextAsync(_notesFilePath, json);
+                await WriteAllTextAsync(_notesFilePath, json);
 
                 System.Diagnostics.Debug.WriteLine($"Saved {notesData.Tabs.Count} notes tabs");
                 return true;
@@ -215,6 +216,24 @@ namespace gtt_sidebar.Widgets.Notes
             {
                 System.Diagnostics.Debug.WriteLine($"Error backing up notes: {ex.Message}");
                 return false;
+            }
+        }
+
+        private static async Task<string> ReadAllTextAsync(string path)
+        {
+            using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+            using (var reader = new StreamReader(fileStream))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+
+        private static async Task WriteAllTextAsync(string path, string content)
+        {
+            using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var writer = new StreamWriter(fileStream))
+            {
+                await writer.WriteAsync(content);
             }
         }
 
