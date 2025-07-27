@@ -4,6 +4,7 @@ using System.IO;
 using System.Resources;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Threading;
 using gtt_sidebar.Core.Managers;
 using gtt_sidebar.Core.Settings;
 using gtt_sidebar.Widgets.ClockWidget;
@@ -29,11 +30,13 @@ namespace gtt_sidebar.Core.Application
             ApplySettings(_currentSettings);
 
             var resourceManager = SharedResourceManager.Instance;
-            System.Diagnostics.Debug.WriteLine("ResourceManager initialized");
 
             _widgetManager = new WidgetManager();
             LoadWidgets();
-            CreateTrayIcon();
+
+            // Create tray icon AFTER window is shown
+            Dispatcher.BeginInvoke(new Action(CreateTrayIcon), DispatcherPriority.Background);
+
         }
 
         private void CreateTrayIcon()
@@ -137,20 +140,31 @@ namespace gtt_sidebar.Core.Application
             WindowPositioner.PositionSidebarWindow(this, settings.Window);
         }
 
-        private async void LoadWidgets()
+        private void LoadWidgets()
         {
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] LoadWidgets START");
+
             WidgetContainer.Children.Clear();
 
-            // Use the widget manager to discover and load widgets
+            // Discover widgets quickly (just creates instances, no initialization)
             var widgets = _widgetManager.DiscoverAndLoadWidgets();
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Widget discovery complete");
 
+            // Add UI elements immediately 
             foreach (var widget in widgets)
             {
                 WidgetContainer.Children.Add(widget.GetControl());
             }
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] UI elements added - WINDOW SHOULD SHOW NOW");
 
-            // Initialize all widgets asynchronously
-            await _widgetManager.InitializeWidgetsAsync();
+            // Initialize widgets in background with delay to let UI render
+            Dispatcher.BeginInvoke(new Action(async () => {
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Starting background initialization");
+                await _widgetManager.InitializeWidgetsAsync();
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Background initialization complete");
+            }), DispatcherPriority.Background);
+
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] LoadWidgets END");
         }
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
