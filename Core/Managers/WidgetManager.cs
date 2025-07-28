@@ -63,9 +63,9 @@ namespace gtt_sidebar.Core.Managers
             {
                 case "Clock": return 1;
                 case "Weather": return 2;
-                case "Stocks": return 3;
-                case "Notes": return 4;
-                case "Shortcuts": return 5;  
+                case "Stocks": return 5;
+                case "Notes": return 3;
+                case "Shortcuts": return 4;  
                 default: return 99; 
             }
         }
