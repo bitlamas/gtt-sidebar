@@ -500,28 +500,39 @@ namespace gtt_sidebar.Widgets.Shortcuts
             return trimmed;
         }
 
+        /// <summary>
+        /// Extract arguments from a command line that might contain arguments
+        /// </summary>
         private string ExtractArguments(string commandLine)
         {
-            if (string.IsNullOrWhiteSpace(commandLine)) return "";
+            if (string.IsNullOrWhiteSpace(commandLine))
+                return "";
+
             var trimmed = commandLine.Trim();
 
-            // Handle quoted paths
+            // handle quoted paths
             if (trimmed.StartsWith("\""))
             {
                 var endQuoteIndex = trimmed.IndexOf("\"", 1);
                 if (endQuoteIndex > 0 && endQuoteIndex + 1 < trimmed.Length)
+                {
                     return trimmed.Substring(endQuoteIndex + 1).Trim();
+                }
             }
 
-            // Handle unquoted paths
+            // handle unquoted paths
             var spaceIndex = trimmed.IndexOf(" ");
             if (spaceIndex > 0)
             {
                 var potentialPath = trimmed.Substring(0, spaceIndex);
+                // check if this looks like a file path and exists
                 if (potentialPath.Contains("\\") && File.Exists(potentialPath))
+                {
                     return trimmed.Substring(spaceIndex + 1).Trim();
+                }
             }
 
+            // if no arguments detected, return empty
             return "";
         }
 

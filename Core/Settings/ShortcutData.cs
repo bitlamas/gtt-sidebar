@@ -33,8 +33,11 @@ namespace gtt_sidebar.Core.Settings
             // Additional validation based on type
             if (Type == ShortcutType.Executable || Type == ShortcutType.WindowsShortcut)
             {
-                // For executables, check if file exists or if it's a known Windows command
-                if (!File.Exists(Path) && !IsWindowsCommand(Path))
+                // extract executable path from command line (handle arguments)
+                var executablePath = ExtractExecutablePath(Path);
+
+                // for executables, check if file exists or if it's a known Windows command
+                if (!File.Exists(executablePath) && !IsWindowsCommand(executablePath))
                 {
                     return false;
                 }
@@ -70,6 +73,42 @@ namespace gtt_sidebar.Core.Settings
             };
 
             return knownCommands.Contains(command.ToLowerInvariant());
+        }
+
+        /// <summary>
+        /// Extract the executable path from a command line that might contain arguments
+        /// </summary>
+        private string ExtractExecutablePath(string commandLine)
+        {
+            if (string.IsNullOrWhiteSpace(commandLine))
+                return commandLine;
+
+            var trimmed = commandLine.Trim();
+
+            // handle quoted paths: "C:\Program Files\App\app.exe" --arguments
+            if (trimmed.StartsWith("\""))
+            {
+                var endQuoteIndex = trimmed.IndexOf("\"", 1);
+                if (endQuoteIndex > 0)
+                {
+                    return trimmed.Substring(1, endQuoteIndex - 1);
+                }
+            }
+
+            // handle unquoted paths: C:\Users\name\App\app.exe --arguments
+            var spaceIndex = trimmed.IndexOf(" ");
+            if (spaceIndex > 0)
+            {
+                var potentialPath = trimmed.Substring(0, spaceIndex);
+                // check if this looks like a file path and exists
+                if (potentialPath.Contains("\\") && File.Exists(potentialPath))
+                {
+                    return potentialPath;
+                }
+            }
+
+            // if no arguments detected, return as-is
+            return trimmed;
         }
 
         /// <summary>

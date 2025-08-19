@@ -795,6 +795,7 @@ namespace gtt_sidebar.Core.Settings
 
                         // Validate the shortcut
                         string validationError;
+
                         if (!ValidateShortcutData(shortcut, out validationError))
                         {
                             MessageBox.Show(validationError, "Validation Error",
