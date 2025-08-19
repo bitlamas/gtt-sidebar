@@ -390,20 +390,25 @@ namespace gtt_sidebar.Widgets.Shortcuts
 
                 switch (shortcut.Type)
                 {
+                    case ShortcutType.Executable:
+                        // Handle command line arguments
+                        var executablePath = ExtractExecutablePath(shortcut.Path);
+                        var arguments = ExtractArguments(shortcut.Path);
+                        if (!File.Exists(executablePath))
+                        {
+                            ShowLaunchError(shortcut.Label, $"Executable not found: {Path.GetFileName(executablePath)}");
+                            return;
+                        }
+                        startInfo.FileName = executablePath;
+                        if (!string.IsNullOrEmpty(arguments))
+                        {
+                            startInfo.Arguments = arguments;
+                        }
+                        break;
                     case ShortcutType.URL:
                         if (!IsValidUrl(shortcut.Path))
                         {
                             ShowLaunchError(shortcut.Label, "Invalid URL format. Please check the web address.");
-                            return;
-                        }
-                        startInfo.FileName = shortcut.Path;
-                        break;
-
-                    case ShortcutType.Executable:
-                        if (!File.Exists(shortcut.Path))
-                        {
-                            ShowLaunchError(shortcut.Label,
-                                $"File not found: {Path.GetFileName(shortcut.Path)}\n\nThe application may have been moved or uninstalled.");
                             return;
                         }
                         startInfo.FileName = shortcut.Path;
@@ -468,6 +473,56 @@ namespace gtt_sidebar.Widgets.Shortcuts
                     $"Unexpected error: {ex.Message}\n\nPlease check the shortcut path in Settings.");
                 System.Diagnostics.Debug.WriteLine($"Unexpected error launching {shortcut.Label}: {ex.Message}");
             }
+        }
+
+        private string ExtractExecutablePath(string commandLine)
+        {
+            if (string.IsNullOrWhiteSpace(commandLine)) return commandLine;
+            var trimmed = commandLine.Trim();
+
+            // Handle quoted paths: "C:\Program Files\App\app.exe" --arguments
+            if (trimmed.StartsWith("\""))
+            {
+                var endQuoteIndex = trimmed.IndexOf("\"", 1);
+                if (endQuoteIndex > 0)
+                    return trimmed.Substring(1, endQuoteIndex - 1);
+            }
+
+            // Handle unquoted paths: C:\Path\app.exe --arguments
+            var spaceIndex = trimmed.IndexOf(" ");
+            if (spaceIndex > 0)
+            {
+                var potentialPath = trimmed.Substring(0, spaceIndex);
+                if (potentialPath.Contains("\\") && File.Exists(potentialPath))
+                    return potentialPath;
+            }
+
+            return trimmed;
+        }
+
+        private string ExtractArguments(string commandLine)
+        {
+            if (string.IsNullOrWhiteSpace(commandLine)) return "";
+            var trimmed = commandLine.Trim();
+
+            // Handle quoted paths
+            if (trimmed.StartsWith("\""))
+            {
+                var endQuoteIndex = trimmed.IndexOf("\"", 1);
+                if (endQuoteIndex > 0 && endQuoteIndex + 1 < trimmed.Length)
+                    return trimmed.Substring(endQuoteIndex + 1).Trim();
+            }
+
+            // Handle unquoted paths
+            var spaceIndex = trimmed.IndexOf(" ");
+            if (spaceIndex > 0)
+            {
+                var potentialPath = trimmed.Substring(0, spaceIndex);
+                if (potentialPath.Contains("\\") && File.Exists(potentialPath))
+                    return trimmed.Substring(spaceIndex + 1).Trim();
+            }
+
+            return "";
         }
 
         /// <summary>
@@ -633,13 +688,15 @@ namespace gtt_sidebar.Widgets.Shortcuts
         {
             try
             {
+                
                 _shortcutsData = ShortcutsStorage.LoadShortcuts();
+                
                 CreateShortcutsGrid();
-                System.Diagnostics.Debug.WriteLine("ShortcutsWidget: Refreshed shortcuts");
+                
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error refreshing shortcuts: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[REFRESH-ERROR] Error refreshing shortcuts: {ex.Message}");
             }
         }
 

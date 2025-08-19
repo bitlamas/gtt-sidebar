@@ -96,15 +96,54 @@ namespace gtt_sidebar.Core.Settings
 
                 case ShortcutType.Executable:
                 case ShortcutType.WindowsShortcut:
-                    if (!File.Exists(shortcut.Path))
+                    // extract executable path from command line (handle arguments)
+                    var executablePath = ExtractExecutablePath(shortcut.Path);
+                    if (!File.Exists(executablePath))
                     {
-                        errorMessage = $"File not found: {shortcut.Path}\n\nPlease check the path.";
+                        errorMessage = $"Executable not found: {executablePath}\n\nPlease check the path.";
                         return false;
                     }
                     break;
             }
 
             return true;
+        }
+
+
+        /// <summary>
+        /// Extract the executable path from a command line that might contain arguments
+        /// </summary>
+        private string ExtractExecutablePath(string commandLine)
+        {
+            if (string.IsNullOrWhiteSpace(commandLine))
+                return commandLine;
+
+            var trimmed = commandLine.Trim();
+
+            // handle quoted paths: "C:\Program Files\App\app.exe" --arguments
+            if (trimmed.StartsWith("\""))
+            {
+                var endQuoteIndex = trimmed.IndexOf("\"", 1);
+                if (endQuoteIndex > 0)
+                {
+                    return trimmed.Substring(1, endQuoteIndex - 1);
+                }
+            }
+
+            // handle unquoted paths: C:\Users\name\App\app.exe --arguments
+            var spaceIndex = trimmed.IndexOf(" ");
+            if (spaceIndex > 0)
+            {
+                var potentialPath = trimmed.Substring(0, spaceIndex);
+                // check if this looks like a file path and exists
+                if (potentialPath.Contains("\\") && File.Exists(potentialPath))
+                {
+                    return potentialPath;
+                }
+            }
+
+            // if no arguments detected, return as-is
+            return trimmed;
         }
 
         /// <summary>
@@ -454,7 +493,7 @@ namespace gtt_sidebar.Core.Settings
             return card;
         }
 
-        private void MoveUp_Click(object sender, RoutedEventArgs e)
+        private async void MoveUp_Click(object sender, RoutedEventArgs e)
         {
             var shortcutId = ((Button)sender).Tag.ToString();
             var shortcut = _shortcutsData.Shortcuts.FirstOrDefault(s => s.Id == shortcutId);
@@ -465,13 +504,13 @@ namespace gtt_sidebar.Core.Settings
                 _shortcutsData.Shortcuts.RemoveAt(index);
                 _shortcutsData.Shortcuts.Insert(index - 1, shortcut);
                 UpdateOrders();
-                SharedResourceManager.Instance.QueueSave("shortcuts", _shortcutsData);
+                await ShortcutsStorage.SaveShortcutsAsync(_shortcutsData);  // IMMEDIATE SAVE
                 LoadShortcutsToUI();
                 ShortcutsChanged?.Invoke();
             }
         }
 
-        private void MoveDown_Click(object sender, RoutedEventArgs e)
+        private async void MoveDown_Click(object sender, RoutedEventArgs e)
         {
             var shortcutId = ((Button)sender).Tag.ToString();
             var shortcut = _shortcutsData.Shortcuts.FirstOrDefault(s => s.Id == shortcutId);
@@ -482,7 +521,7 @@ namespace gtt_sidebar.Core.Settings
                 _shortcutsData.Shortcuts.RemoveAt(index);
                 _shortcutsData.Shortcuts.Insert(index + 1, shortcut);
                 UpdateOrders();
-                SharedResourceManager.Instance.QueueSave("shortcuts", _shortcutsData);
+                await ShortcutsStorage.SaveShortcutsAsync(_shortcutsData);  // IMMEDIATE SAVE
                 LoadShortcutsToUI();
                 ShortcutsChanged?.Invoke();
             }
@@ -528,8 +567,9 @@ namespace gtt_sidebar.Core.Settings
 
             if (card != null)
             {
-                var saveButton = FindChildByTag<Button>(card, shortcutId);
-                if (saveButton != null && saveButton.ToolTip?.ToString() == "Save changes")
+                // Use the existing helper method that finds by content (💾)
+                var saveButton = FindChildByContent<Button>(card, "💾");
+                if (saveButton != null)
                 {
                     saveButton.IsEnabled = true;
                     saveButton.Background = new SolidColorBrush(Color.FromRgb(40, 167, 69)); // Green when enabled
