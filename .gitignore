@@ -8,6 +8,9 @@
 *.xml
 *.config.backup
 
+# Documentation
+docs/
+
 # Build directories
 bin/
 obj/
