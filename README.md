@@ -1,10 +1,10 @@
 # gtt-sidebar
 
-gtt-sidebar is a simple Windows desktop sidebar that fills the empty space on my 14" laptop screen when using LibreWolf's default window size (1920x1080 @ 125% scaling). 
+This is a simple Windows desktop sidebar developed in C# that fills the empty space on my 14" laptop screen (1920x1080 @ 125% scaling) when using LibreWolf's default window size. 
 
 ![gtt-sidebar-image](https://github.com/user-attachments/assets/31d40c02-c6fa-4529-aa39-edc97fb3cf8b)
 
-What started as a personal utility to avoid wasted screen real estate became a lightweight productivity tool with widgets for notes, weather, shortcuts, stocks, and system monitoring.
+A personal utility project that helped me get into C# development with widgets for weather, notes, stocks, shortcuts and system monitoring. This is a work in progress with no clear roadmap, but I intend to add more customization options. The sidebar is already very modular and easy to add new widgets, but I will make it simpler and create a proper interface to manage them.
 
 ## Quick Start
 
@@ -36,8 +36,6 @@ All widgets are configurable through a unified settings window. The sidebar stay
 - **Real-time updates** - weather (30min), stocks (10min), system metrics (configurable)
 - **Persistent storage** - JSON-based settings and data (settings.json, shortcuts.json, notes.json)
 - **Custom icons for shortcuts** - 50 built-in icons + PNG upload support
-
-This is a work in progress and there's no roadmap, but I intend to add more customization options. It's already very modular and easy to add new widgets.
 
 ---
 
